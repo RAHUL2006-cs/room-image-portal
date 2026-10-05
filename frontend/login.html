@@ -1,0 +1,1183 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Admin Login</title>
+
+    <style>
+
+        /* =========================================
+           RESET
+        ========================================= */
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+        }
+
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            background: #fdfaf7;
+            color: #24150e;
+            overflow: hidden;
+        }
+
+
+        /* =========================================
+           PAGE
+        ========================================= */
+
+        .page {
+            width: 100%;
+            height: 100vh;
+
+            position: relative;
+            overflow: hidden;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            background: #fdfaf7;
+        }
+
+
+        /* =========================================
+           TOP LEFT
+        ========================================= */
+
+        .top-left-circle {
+            position: absolute;
+
+            width: 530px;
+            height: 530px;
+
+            top: -360px;
+            left: -225px;
+
+            border-radius: 50%;
+
+            border: 1px solid rgba(165, 101, 65, 0.16);
+
+            z-index: 0;
+        }
+
+        .top-left-ring {
+            position: absolute;
+
+            width: 650px;
+            height: 650px;
+
+            top: -420px;
+            left: -285px;
+
+            border-radius: 50%;
+
+            border: 1px solid rgba(165, 101, 65, 0.09);
+
+            z-index: 0;
+        }
+
+
+        /* =========================================
+           TOP RIGHT
+        ========================================= */
+
+        .top-right-circle {
+            position: absolute;
+
+            width: 500px;
+            height: 500px;
+
+            top: -355px;
+            right: -205px;
+
+            border-radius: 50%;
+
+            background:
+                radial-gradient(
+                    circle at 35% 35%,
+                    #b97b58,
+                    #96552f 72%
+                );
+
+            z-index: 0;
+        }
+
+        .top-right-ring {
+            position: absolute;
+
+            width: 625px;
+            height: 625px;
+
+            top: -415px;
+            right: -270px;
+
+            border-radius: 50%;
+
+            border: 1px solid rgba(165, 101, 65, 0.17);
+
+            z-index: 0;
+        }
+
+
+        /* =========================================
+           BOTTOM LEFT
+        ========================================= */
+
+        .bottom-left-circle {
+            position: absolute;
+
+            width: 600px;
+            height: 600px;
+
+            left: -365px;
+            bottom: -430px;
+
+            border-radius: 50%;
+
+            background:
+                radial-gradient(
+                    circle at 65% 35%,
+                    #c99576,
+                    #aa704f 75%
+                );
+
+            z-index: 0;
+        }
+
+        .bottom-left-ring {
+            position: absolute;
+
+            width: 720px;
+            height: 720px;
+
+            left: -425px;
+            bottom: -490px;
+
+            border-radius: 50%;
+
+            border: 1px solid rgba(165, 101, 65, 0.13);
+
+            z-index: 0;
+        }
+
+
+        /* =========================================
+           BOTTOM RIGHT
+        ========================================= */
+
+        .bottom-right-circle {
+            position: absolute;
+
+            width: 500px;
+            height: 500px;
+
+            right: -350px;
+            bottom: -380px;
+
+            border-radius: 50%;
+
+            background: rgba(194, 157, 133, 0.12);
+
+            z-index: 0;
+        }
+
+        .bottom-right-ring {
+            position: absolute;
+
+            width: 620px;
+            height: 620px;
+
+            right: -410px;
+            bottom: -440px;
+
+            border-radius: 50%;
+
+            border: 1px solid rgba(165, 101, 65, 0.10);
+
+            z-index: 0;
+        }
+
+
+        /* =========================================
+           MIDDLE SWEEP
+        ========================================= */
+
+        .middle-sweep {
+            position: absolute;
+
+            width: 1450px;
+            height: 460px;
+
+            left: 50%;
+            top: 51%;
+
+            transform:
+                translate(-50%, -50%)
+                rotate(27deg);
+
+            border-radius: 50%;
+
+            background: rgba(211, 185, 163, 0.055);
+
+            z-index: 0;
+
+            pointer-events: none;
+        }
+
+
+        /* =========================================
+           MAIN CURVED LINE
+        ========================================= */
+
+        .middle-line {
+            position: absolute;
+
+            width: 1450px;
+            height: 460px;
+
+            left: 50%;
+            top: 51%;
+
+            transform:
+                translate(-50%, -50%)
+                rotate(27deg);
+
+            border-radius: 50%;
+
+            border: 1px solid rgba(165, 101, 65, 0.20);
+
+            z-index: 1;
+
+            pointer-events: none;
+        }
+
+
+        /* =========================================
+           SECOND CURVE
+        ========================================= */
+
+        .middle-line-two {
+            position: absolute;
+
+            width: 1530px;
+            height: 520px;
+
+            left: 50%;
+            top: 51%;
+
+            transform:
+                translate(-50%, -50%)
+                rotate(27deg);
+
+            border-radius: 50%;
+
+            border: 1px solid rgba(165, 101, 65, 0.08);
+
+            z-index: 1;
+
+            pointer-events: none;
+        }
+
+
+        /* =========================================
+           DOTS
+        ========================================= */
+
+        /* =========================================
+   DECORATIVE DOTS
+========================================= */
+
+
+
+
+        /* =========================================
+           LOGIN CARD
+        ========================================= */
+
+        .login-card {
+            position: relative;
+
+            z-index: 10;
+
+            width: 470px;
+            max-width: calc(100vw - 40px);
+
+            padding: 36px 42px 30px;
+
+            background: rgba(255, 255, 255, 0.88);
+
+            border: 1px solid rgba(224, 210, 200, 0.85);
+
+            border-radius: 24px;
+
+            box-shadow:
+                0 25px 60px rgba(72, 40, 23, 0.08),
+                0 5px 20px rgba(72, 40, 23, 0.04);
+
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+
+            transform: translateY(-8px);
+        }
+
+
+        /* =========================================
+           BRAND
+        ========================================= */
+
+        .brand {
+            display: flex;
+
+            align-items: center;
+            justify-content: center;
+
+            gap: 10px;
+
+            color: #704025;
+
+            font-size: 17px;
+
+            font-weight: 700;
+
+            margin-bottom: 28px;
+        }
+
+        .brand-icon {
+            width: 26px;
+            height: 26px;
+
+            border: 2.5px solid #704025;
+
+            border-radius: 2px;
+
+            position: relative;
+        }
+
+        .brand-icon::before,
+        .brand-icon::after {
+            content: "";
+
+            position: absolute;
+
+            left: 5px;
+
+            width: 11px;
+            height: 2px;
+
+            background: #704025;
+        }
+
+        .brand-icon::before {
+            top: 6px;
+        }
+
+        .brand-icon::after {
+            top: 12px;
+        }
+
+
+        /* =========================================
+           HEADING
+        ========================================= */
+
+        .heading {
+            text-align: center;
+
+            margin-bottom: 30px;
+        }
+
+        .heading h1 {
+            color: #17110d;
+
+            font-size: 36px;
+
+            font-weight: 750;
+
+            line-height: 1;
+
+            letter-spacing: -1.7px;
+
+            margin-bottom: 11px;
+        }
+
+        .heading p {
+            color: #77706b;
+
+            font-size: 14px;
+
+            line-height: 1.5;
+        }
+
+
+        /* =========================================
+           FORM GROUP
+        ========================================= */
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        .form-group label {
+            display: block;
+
+            color: #24150e;
+
+            font-size: 13px;
+
+            font-weight: 700;
+
+            margin-bottom: 7px;
+        }
+
+
+        /* =========================================
+           INPUT
+        ========================================= */
+
+        .input-box {
+            width: 100%;
+            height: 50px;
+
+            display: flex;
+
+            align-items: center;
+
+            padding: 0 14px;
+
+            background: rgba(255, 255, 255, 0.95);
+
+            border: 1px solid #e1d5cd;
+
+            border-radius: 11px;
+
+            transition:
+                border-color 0.2s ease,
+                box-shadow 0.2s ease,
+                background 0.2s ease;
+        }
+
+        .input-box:hover {
+            border-color: #d1b9a8;
+        }
+
+        .input-box:focus-within {
+            background: #ffffff;
+
+            border-color: #a86239;
+
+            box-shadow:
+                0 0 0 3px rgba(168, 98, 57, 0.07);
+        }
+
+        .input-icon {
+            width: 18px;
+            height: 18px;
+
+            margin-right: 10px;
+
+            color: #99918c;
+
+            flex-shrink: 0;
+        }
+
+        .input-box input {
+            width: 100%;
+            height: 100%;
+
+            border: none;
+            outline: none;
+
+            background: transparent;
+
+            font-family: inherit;
+
+            font-size: 14px;
+
+            color: #351c12;
+        }
+
+        .input-box input::placeholder {
+            color: #aaa39e;
+        }
+
+
+        /* =========================================
+           FORGOT PASSWORD
+        ========================================= */
+
+        .forgot {
+            display: block;
+
+            text-align: right;
+
+            margin-top: -2px;
+            margin-bottom: 20px;
+
+            color: #8b4e2d;
+
+            font-size: 12px;
+
+            font-weight: 600;
+
+            text-decoration: none;
+        }
+
+        .forgot:hover {
+            text-decoration: underline;
+        }
+
+
+        /* =========================================
+           LOGIN BUTTON
+        ========================================= */
+
+        .login-btn {
+            width: 100%;
+            height: 48px;
+
+            border: none;
+
+            border-radius: 11px;
+
+            background:
+                linear-gradient(
+                    110deg,
+                    #81431f 0%,
+                    #98552d 45%,
+                    #b16c43 100%
+                );
+
+            color: #ffffff;
+
+            font-family: inherit;
+
+            font-size: 14px;
+
+            font-weight: 700;
+
+            cursor: pointer;
+
+            box-shadow:
+                0 10px 24px rgba(117, 61, 30, 0.16);
+
+            transition:
+                transform 0.2s ease,
+                box-shadow 0.2s ease;
+        }
+
+        .login-btn:hover {
+            transform: translateY(-2px);
+
+            box-shadow:
+                0 14px 28px rgba(117, 61, 30, 0.21);
+        }
+
+        .login-btn:active {
+            transform: translateY(0);
+        }
+
+        .arrow {
+            font-size: 20px;
+
+            margin-left: 8px;
+
+            vertical-align: -1px;
+        }
+
+
+        /* =========================================
+           DIVIDER
+        ========================================= */
+
+        .divider {
+            display: flex;
+
+            align-items: center;
+
+            gap: 13px;
+
+            margin: 20px 0;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: "";
+
+            flex: 1;
+
+            height: 1px;
+
+            background: #e5ddd7;
+        }
+
+        .divider span {
+            color: #a09a96;
+
+            font-size: 11px;
+
+            font-weight: 600;
+        }
+
+
+        /* =========================================
+           GOOGLE
+        ========================================= */
+
+        .google-btn {
+            width: 100%;
+            height: 46px;
+
+            border: 1px solid #e1d7d0;
+
+            border-radius: 11px;
+
+            background: rgba(255, 255, 255, 0.94);
+
+            color: #292522;
+
+            font-family: inherit;
+
+            font-size: 14px;
+
+            font-weight: 600;
+
+            cursor: pointer;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            gap: 10px;
+
+            transition: 0.2s ease;
+        }
+
+        .google-btn:hover {
+            background: #ffffff;
+
+            border-color: #d2bbae;
+
+            box-shadow:
+                0 5px 15px rgba(72, 40, 23, 0.05);
+        }
+
+        .google-icon {
+            width: 18px;
+            height: 18px;
+        }
+
+
+        /* =========================================
+           SIGN UP
+        ========================================= */
+
+        .signup {
+            text-align: center;
+
+            margin-top: 20px;
+
+            color: #8c8580;
+
+            font-size: 12px;
+        }
+
+        .signup a {
+            color: #8b4e2d;
+
+            font-weight: 700;
+
+            text-decoration: none;
+        }
+
+        .signup a:hover {
+            text-decoration: underline;
+        }
+
+
+        /* =========================================
+           RESPONSIVE HEIGHT
+        ========================================= */
+
+        @media (max-height: 800px) {
+
+            .login-card {
+                padding-top: 30px;
+                padding-bottom: 26px;
+            }
+
+            .brand {
+                margin-bottom: 21px;
+            }
+
+            .heading {
+                margin-bottom: 23px;
+            }
+
+            .heading h1 {
+                font-size: 32px;
+            }
+
+            .form-group {
+                margin-bottom: 14px;
+            }
+
+            .input-box {
+                height: 46px;
+            }
+
+            .login-btn {
+                height: 45px;
+            }
+
+            .divider {
+                margin: 17px 0;
+            }
+
+            .google-btn {
+                height: 43px;
+            }
+
+            .signup {
+                margin-top: 16px;
+            }
+        }
+
+
+        /* =========================================
+           MOBILE
+        ========================================= */
+
+        @media (max-width: 600px) {
+
+            .login-card {
+                width: calc(100vw - 30px);
+
+                padding: 30px 24px 25px;
+            }
+
+            .heading h1 {
+                font-size: 30px;
+            }
+
+            .heading p {
+                font-size: 13px;
+            }
+
+            .middle-line,
+            .middle-line-two {
+                width: 1000px;
+            }
+
+            .dot-one {
+                left: 80px;
+            }
+
+            .dot-two {
+                right: 80px;
+            }
+
+            .dot-three {
+                right: 90px;
+            }
+        }
+        /* PRD: no forgot-password flow and no Google login (email + password only) */
+        .forgot, .divider, .google-btn { display: none !important; }
+
+        .back-link {
+    position: fixed;
+    top: 24px;
+    left: 28px;
+    z-index: 100;
+    color: #7a5a47;
+    font-size: 16px;
+    font-weight: 600;
+    text-decoration: none;
+}
+.back-link:hover { color: #4d2f20; text-decoration: underline; }   
+    </style>
+</head>
+
+
+<body>
+    <a href="index.html" class="back-link">‹ Back</a>
+
+    <main class="page">
+
+
+        <!-- =====================================
+             BACKGROUND DECORATION
+        ====================================== -->
+
+        <div class="top-left-circle"></div>
+        <div class="top-left-ring"></div>
+
+        <div class="top-right-circle"></div>
+        <div class="top-right-ring"></div>
+
+        <div class="bottom-left-circle"></div>
+        <div class="bottom-left-ring"></div>
+
+        <div class="bottom-right-circle"></div>
+        <div class="bottom-right-ring"></div>
+
+        <div class="middle-sweep"></div>
+        <div class="middle-line"></div>
+        <div class="middle-line-two"></div>
+
+        
+
+       
+
+
+        <!-- =====================================
+             LOGIN CARD
+        ====================================== -->
+
+        <section class="login-card">
+
+
+            <!-- BRAND -->
+
+            <div class="brand">
+
+                <div class="brand-icon"></div>
+
+                <span id="portalName">
+                    Admin Portal
+                </span>
+
+            </div>
+
+
+            <!-- HEADING -->
+
+            <div class="heading">
+
+                <h1>
+                    Welcome Back
+                </h1>
+
+                <p id="loginSubtitle">
+                    Sign in to continue to your admin panel.
+                </p>
+
+            </div>
+
+
+            <!-- FORM -->
+
+            <form id="loginForm">
+
+
+                <!-- EMAIL -->
+
+                <div class="form-group">
+
+                    <label for="email">
+                        Email Address
+                    </label>
+
+                    <div class="input-box">
+
+                        <svg
+                            class="input-icon"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1.7"
+                        >
+
+                            <rect
+                                x="3"
+                                y="5"
+                                width="18"
+                                height="14"
+                                rx="2"
+                            ></rect>
+
+                            <path d="M3 7l9 6 9-6"></path>
+
+                        </svg>
+
+
+                        <input
+                            type="email"
+                            id="email"
+                            placeholder="Enter your email"
+                            autocomplete="email"
+                            required
+                        >
+
+                    </div>
+
+                </div>
+
+
+                <!-- PASSWORD -->
+
+                <div class="form-group">
+
+                    <label for="password">
+                        Password
+                    </label>
+
+                    <div class="input-box">
+
+                        <svg
+                            class="input-icon"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1.7"
+                        >
+
+                            <rect
+                                x="5"
+                                y="10"
+                                width="14"
+                                height="10"
+                                rx="2"
+                            ></rect>
+
+                            <path d="M8 10V7a4 4 0 018 0v3"></path>
+
+                        </svg>
+
+
+                        <input
+                            type="password"
+                            id="password"
+                            placeholder="Enter your password"
+                            autocomplete="current-password"
+                            required
+                        >
+
+                    </div>
+
+                </div>
+
+
+                <!-- FORGOT PASSWORD -->
+
+                <a
+                    href="#"
+                    class="forgot"
+                >
+                    Forgot password?
+                </a>
+
+
+                <!-- LOGIN BUTTON -->
+
+                <button
+                    type="submit"
+                    class="login-btn"
+                >
+
+                    Login
+
+                </button>
+
+
+                <!-- DIVIDER -->
+
+                <div class="divider">
+
+                    <span>
+                        OR
+                    </span>
+
+                </div>
+
+
+                <!-- GOOGLE BUTTON -->
+
+                <button
+                    type="button"
+                    class="google-btn"
+                    id="googleBtn"
+                >
+
+                    <svg
+                        class="google-icon"
+                        viewBox="0 0 24 24"
+                    >
+
+                        <path
+                            fill="#4285F4"
+                            d="M21.35 12.27c0-.79-.07-1.55-.22-2.27H12v4.3h5.24a4.48 4.48 0 01-1.94 2.94v2.45h3.14c1.84-1.69 2.91-4.18 2.91-7.42z"
+                        />
+
+                        <path
+                            fill="#34A853"
+                            d="M12 21.75c2.63 0 4.84-.87 6.45-2.36l-3.14-2.45c-.87.58-1.98.92-3.31.92-2.54 0-4.69-1.72-5.46-4.03H3.29v2.53A9.75 9.75 0 0012 21.75z"
+                        />
+
+                        <path
+                            fill="#FBBC05"
+                            d="M6.54 13.83A5.86 5.86 0 016.23 12c0-.64.11-1.26.31-1.83V7.64H3.29A9.75 9.75 0 002.25 12c0 1.57.38 3.05 1.04 4.36l3.25-2.53z"
+                        />
+
+                        <path
+                            fill="#EA4335"
+                            d="M12 6.14c1.43 0 2.71.49 3.72 1.45l2.79-2.79C16.84 3.22 14.63 2.25 12 2.25a9.75 9.75 0 00-8.71 5.39l3.25 2.53C7.31 7.86 9.46 6.14 12 6.14z"
+                        />
+
+                    </svg>
+
+                    Continue with Google
+
+                </button>
+
+
+                <!-- SIGN UP -->
+
+                <div class="signup">
+
+                    Don't have an account?
+
+                   <a href="signup.html" id="signupLink">
+
+                        Sign up
+                    </a>
+
+                </div>
+
+            </form>
+
+        </section>
+
+    </main>
+
+
+    <!-- =========================================
+         JAVASCRIPT
+    ========================================= -->
+    <script>
+
+    /* =========================================
+       ROLE (chosen on the first page)
+    ========================================= */
+
+    const API_BASE = location.protocol === "file:" ? "http://127.0.0.1:8001"
+                : location.port === "5500" ? "http://" + location.hostname + ":8001"
+                : location.origin;
+
+    const role =
+        new URLSearchParams(window.location.search).get("role") === "user"
+            ? "user"
+            : "admin";
+
+    const ROLE_SETTINGS = {
+        admin: {
+            portal: "Admin Portal",
+            subtitle: "Sign in to continue to your admin panel.",
+            loginUrl: API_BASE + "/admin/login",
+            nextPage: "dashboard.html"
+        },
+        user: {
+            portal: "User Portal",
+            subtitle: "Sign in to view your rooms and images.",
+            loginUrl: API_BASE + "/login",
+            nextPage: "user_dashboard.html"
+        }
+    };
+
+    const settings = ROLE_SETTINGS[role];
+
+    document.title = settings.portal + " Login";
+    document.getElementById("portalName").textContent = settings.portal;
+    document.getElementById("loginSubtitle").textContent = settings.subtitle;
+    document.getElementById("signupLink").href = "signup.html?role=" + role;
+    if (role === "user") {
+        document.querySelector(".signup").style.display = "none";
+    }
+
+    const loginForm = document.getElementById("loginForm");
+    const loginButton = loginForm.querySelector(".login-btn");
+    const googleBtn = document.getElementById("googleBtn");
+
+    function resetLoginButton() {
+        loginButton.disabled = false;
+        loginButton.innerHTML = 'Login <span class="arrow">→</span>';
+    }
+
+    /* =========================================
+       LOGIN
+    ========================================= */
+
+    loginForm.addEventListener("submit", async function (event) {
+        event.preventDefault();
+
+        const email = document.getElementById("email").value.trim();
+        const password = document.getElementById("password").value;
+
+        if (!email) { alert("Please enter your email."); return; }
+        if (!password) { alert("Please enter your password."); return; }
+
+        loginButton.disabled = true;
+        loginButton.innerHTML = 'Logging in <span class="arrow">...</span>';
+
+        try {
+            const response = await fetch(settings.loginUrl, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email: email, password: password })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                alert(data.detail || "Invalid email or password.");
+                resetLoginButton();
+                return;
+            }
+
+            if (!data.access_token) {
+                alert("Login failed. No access token received.");
+                resetLoginButton();
+                return;
+            }
+
+            localStorage.setItem("access_token", data.access_token);
+            localStorage.setItem("user_id", data.user_id);
+            localStorage.setItem("user_name", data.name);
+            localStorage.setItem("user_email", data.email);
+            localStorage.setItem("role", role);
+
+            window.location.href = settings.nextPage;
+
+        } catch (error) {
+            console.error("Login error:", error);
+            alert("Unable to connect to the server.");
+            resetLoginButton();
+        }
+    });
+
+    /* =========================================
+       GOOGLE LOGIN
+    ========================================= */
+
+    googleBtn.addEventListener("click", function () {
+        alert("Google login will be connected later.");
+    });
+
+    </script>
+    
+</body>
+
+</html>

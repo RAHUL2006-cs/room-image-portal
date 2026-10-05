@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Sign Up</title>
+
+    <style>
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            background: #fdfaf7;
+            min-height: 100vh;
+            overflow: hidden;
+            color: #3f2a1d;
+        }
+
+
+        /* =========================
+           PAGE
+        ========================= */
+
+        .page {
+            width: 100%;
+            height: 100vh;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            position: relative;
+            overflow: hidden;
+        }
+
+
+        /* =========================================
+           BACKGROUND
+        ========================================= */
+
+        .top-left-circle {
+            position: absolute;
+
+            width: 530px;
+            height: 530px;
+
+            top: -360px;
+            left: -225px;
+
+            border-radius: 50%;
+
+            border: 1px solid rgba(165, 101, 65, 0.16);
+
+            z-index: 0;
+        }
+
+
+        .top-left-ring {
+            position: absolute;
+
+            width: 650px;
+            height: 650px;
+
+            top: -420px;
+            left: -285px;
+
+            border-radius: 50%;
+
+            border: 1px solid rgba(165, 101, 65, 0.09);
+
+            z-index: 0;
+        }
+
+
+        /* =========================================
+           TOP RIGHT
+        ========================================= */
+
+        .top-right-circle {
+            position: absolute;
+
+            width: 500px;
+            height: 500px;
+
+            top: -355px;
+            right: -205px;
+
+            border-radius: 50%;
+
+            background:
+                radial-gradient(
+                    circle at 35% 35%,
+                    #b97b58,
+                    #96552f 72%
+                );
+
+            z-index: 0;
+        }
+
+
+        .top-right-ring {
+            position: absolute;
+
+            width: 625px;
+            height: 625px;
+
+            top: -415px;
+            right: -270px;
+
+            border-radius: 50%;
+
+            border: 1px solid rgba(165, 101, 65, 0.17);
+
+            z-index: 0;
+        }
+
+
+        /* =========================================
+           BOTTOM LEFT
+        ========================================= */
+
+        .bottom-left-circle {
+            position: absolute;
+
+            width: 600px;
+            height: 600px;
+
+            left: -365px;
+            bottom: -430px;
+
+            border-radius: 50%;
+
+            background:
+                radial-gradient(
+                    circle at 65% 35%,
+                    #c99576,
+                    #aa704f 75%
+                );
+
+            z-index: 0;
+        }
+
+
+        .bottom-left-ring {
+            position: absolute;
+
+            width: 720px;
+            height: 720px;
+
+            left: -425px;
+            bottom: -490px;
+
+            border-radius: 50%;
+
+            border: 1px solid rgba(165, 101, 65, 0.13);
+
+            z-index: 0;
+        }
+
+
+        /* =========================================
+           BOTTOM RIGHT
+        ========================================= */
+
+        .bottom-right-circle {
+            position: absolute;
+
+            width: 500px;
+            height: 500px;
+
+            right: -350px;
+            bottom: -380px;
+
+            border-radius: 50%;
+
+            background: rgba(194, 157, 133, 0.12);
+
+            z-index: 0;
+        }
+
+
+        .bottom-right-ring {
+            position: absolute;
+
+            width: 620px;
+            height: 620px;
+
+            right: -410px;
+            bottom: -440px;
+
+            border-radius: 50%;
+
+            border: 1px solid rgba(165, 101, 65, 0.10);
+
+            z-index: 0;
+        }
+
+
+        /* =========================================
+           MIDDLE SWEEP
+        ========================================= */
+
+        .middle-sweep {
+            position: absolute;
+
+            width: 1450px;
+            height: 460px;
+
+            left: 50%;
+            top: 51%;
+
+            transform:
+                translate(-50%, -50%)
+                rotate(27deg);
+
+            border-radius: 50%;
+
+            background: rgba(211, 185, 163, 0.055);
+
+            z-index: 0;
+
+            pointer-events: none;
+        }
+
+
+        /* =========================================
+           MAIN CURVED LINE
+        ========================================= */
+
+        .middle-line {
+            position: absolute;
+
+            width: 1450px;
+            height: 460px;
+
+            left: 50%;
+            top: 51%;
+
+            transform:
+                translate(-50%, -50%)
+                rotate(27deg);
+
+            border-radius: 50%;
+
+            border: 1px solid rgba(165, 101, 65, 0.20);
+
+            z-index: 1;
+
+            pointer-events: none;
+        }
+
+
+        /* =========================================
+           SECOND CURVE
+        ========================================= */
+
+        .middle-line-two {
+            position: absolute;
+
+            width: 1530px;
+            height: 520px;
+
+            left: 50%;
+            top: 51%;
+
+            transform:
+                translate(-50%, -50%)
+                rotate(27deg);
+
+            border-radius: 50%;
+
+            border: 1px solid rgba(165, 101, 65, 0.08);
+
+            z-index: 1;
+
+            pointer-events: none;
+        }
+
+
+        /* =========================
+           SIGNUP CARD
+        ========================= */
+
+        .login-card {
+            position: relative;
+            z-index: 10;
+
+            width: 470px;
+
+            padding: 42px 46px;
+
+            background: rgba(255, 255, 255, 0.92);
+
+            border: 1px solid rgba(126, 88, 59, 0.12);
+
+            border-radius: 24px;
+
+            box-shadow:
+                0 25px 60px rgba(73, 45, 27, 0.12),
+                0 5px 20px rgba(73, 45, 27, 0.06);
+
+            animation: cardIn 0.7s ease;
+        }
+
+
+        @keyframes cardIn {
+
+            from {
+                opacity: 0;
+                transform: translateY(20px) scale(0.98);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+
+        }
+
+
+        /* =========================
+           TITLE
+        ========================= */
+
+        .login-card h1 {
+            font-size: 31px;
+
+            font-weight: 600;
+
+            color: #3d281c;
+
+            margin-bottom: 8px;
+
+            text-align: center;
+        }
+
+
+        .subtitle {
+            text-align: center;
+
+            font-size: 14px;
+
+            color: #806c5d;
+
+            margin-bottom: 30px;
+        }
+
+
+        /* =========================
+           FORM
+        ========================= */
+
+        .input-group {
+            margin-bottom: 18px;
+        }
+
+
+        .input-group label {
+            display: block;
+
+            font-size: 13px;
+
+            font-weight: 600;
+
+            color: #5b4332;
+
+            margin-bottom: 7px;
+        }
+
+
+        .input-group input {
+            width: 100%;
+
+            height: 48px;
+
+            border: 1px solid #d8c8ba;
+
+            border-radius: 11px;
+
+            padding: 0 15px;
+
+            font-size: 14px;
+
+            color: #3d281c;
+
+            background: #ffffff;
+
+            outline: none;
+
+            transition: 0.25s ease;
+        }
+
+
+        .input-group input:focus {
+            border-color: #8b6245;
+
+            box-shadow:
+                0 0 0 3px rgba(139, 98, 69, 0.10);
+        }
+
+
+        /* =========================
+           CREATE ACCOUNT BUTTON
+        ========================= */
+
+    .login-btn {
+    width: 100%;
+    height: 50px;
+    margin-top: 8px;
+
+    border: none;
+    border-radius: 11px;
+
+    background: linear-gradient(
+        90deg,
+        #834521 0%,
+        #b36d43 100%
+    );
+
+    color: white;
+
+    font-size: 15px;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition: 0.25s ease;
+}
+
+.login-btn:hover {
+    background: linear-gradient(
+        90deg,
+        #753d1d 0%,
+        #a55f38 100%
+    );
+
+    transform: translateY(-1px);
+
+    box-shadow:
+        0 8px 20px rgba(91, 57, 37, 0.18);
+}
+
+.login-btn:active {
+    transform: translateY(0);
+}
+
+.login-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.7;
+    transform: none;
+    box-shadow: none;
+}
+
+
+        /* =========================
+           DIVIDER
+        ========================= */
+
+        .divider {
+            display: flex;
+
+            align-items: center;
+
+            gap: 12px;
+
+            margin: 24px 0;
+        }
+
+
+        .divider span {
+            height: 1px;
+
+            flex: 1;
+
+            background: #e0d5cb;
+        }
+
+
+        .divider p {
+            font-size: 12px;
+
+            color: #9a897c;
+        }
+
+
+        /* =========================
+           GOOGLE BUTTON
+        ========================= */
+
+        .google-btn {
+            width: 100%;
+
+            height: 48px;
+
+            border-radius: 11px;
+
+            border: 1px solid #d8c8ba;
+
+            background: white;
+
+            color: #4d392c;
+
+            font-size: 14px;
+
+            font-weight: 500;
+
+            cursor: pointer;
+
+            transition: 0.25s ease;
+        }
+
+
+        .google-btn:hover {
+            background: #faf7f4;
+
+            border-color: #bda48f;
+        }
+
+
+        /* =========================
+           LOGIN LINK
+        ========================= */
+
+        .bottom-text {
+            text-align: center;
+
+            margin-top: 25px;
+
+            font-size: 13px;
+
+            color: #806c5d;
+        }
+
+
+        .bottom-text a {
+            color: #5b3925;
+
+            font-weight: 600;
+
+            text-decoration: none;
+        }
+
+
+        .bottom-text a:hover {
+            text-decoration: underline;
+        }
+
+
+        /* =========================
+           RESPONSIVE
+        ========================= */
+
+        @media (max-width: 600px) {
+
+            .login-card {
+                width: calc(100% - 32px);
+
+                padding: 34px 25px;
+            }
+
+
+            .login-card h1 {
+                font-size: 27px;
+            }
+
+
+            .top-left-circle,
+            .top-left-ring,
+            .top-right-circle,
+            .top-right-ring,
+            .bottom-left-circle,
+            .bottom-left-ring,
+            .bottom-right-circle,
+            .bottom-right-ring {
+                opacity: 0.35;
+            }
+
+        }
+        /* PRD: no forgot-password flow and no Google login (email + password only) */
+        .forgot, .divider, .google-btn { display: none !important; }
+    </style>
+
+</head>
+
+
+<body>
+
+    <div class="page">
+
+
+        <!-- =========================
+             BACKGROUND
+        ========================= -->
+
+        <div class="top-left-circle"></div>
+        <div class="top-left-ring"></div>
+
+        <div class="top-right-circle"></div>
+        <div class="top-right-ring"></div>
+
+        <div class="bottom-left-circle"></div>
+        <div class="bottom-left-ring"></div>
+
+        <div class="bottom-right-circle"></div>
+        <div class="bottom-right-ring"></div>
+
+        <div class="middle-sweep"></div>
+        <div class="middle-line"></div>
+        <div class="middle-line-two"></div>
+
+
+        <!-- =========================
+             SIGNUP CARD
+        ========================= -->
+
+        <main class="login-card">
+
+
+            <h1>Create Account</h1>
+
+
+                        <p class="subtitle" id="signupSubtitle">
+                Create your account to continue
+            </p>
+
+
+            <form id="signupForm">
+
+
+                <!-- FULL NAME -->
+
+                <div class="input-group">
+
+                    <label for="fullName">
+                        Full Name
+                    </label>
+
+                    <input
+                        type="text"
+                        id="fullName"
+                        placeholder="Enter your full name"
+                        autocomplete="name"
+                        required
+                    >
+
+                </div>
+
+
+                <!-- EMAIL -->
+
+                <div class="input-group">
+
+                    <label for="email">
+                        Email Address
+                    </label>
+
+                    <input
+                        type="email"
+                        id="email"
+                        placeholder="Enter your email"
+                        autocomplete="email"
+                        required
+                    >
+
+                </div>
+
+
+                <!-- PASSWORD -->
+
+                <div class="input-group">
+
+                    <label for="password">
+                        Password
+                    </label>
+
+                    <input
+                        type="password"
+                        id="password"
+                        placeholder="Create a password"
+                        autocomplete="new-password"
+                        required
+                    >
+
+                </div>
+
+
+                <!-- CONFIRM PASSWORD -->
+
+                <div class="input-group">
+
+                    <label for="confirmPassword">
+                        Confirm Password
+                    </label>
+
+                    <input
+                        type="password"
+                        id="confirmPassword"
+                        placeholder="Confirm your password"
+                        autocomplete="new-password"
+                        required
+                    >
+
+                </div>
+                <!-- CREATE ACCOUNT -->
+
+                <button
+                    type="submit"
+                    class="login-btn"
+                >
+                    Create Account →
+                </button>
+
+
+            </form>
+
+
+            <!-- DIVIDER -->
+
+            <div class="divider">
+
+                <span></span>
+
+                <p>OR</p>
+
+                <span></span>
+
+            </div>
+
+
+            <!-- GOOGLE -->
+
+            <button
+                type="button"
+                class="google-btn"
+                id="googleBtn"
+            >
+                Continue with Google
+            </button>
+
+
+            <!-- LOGIN -->
+
+            <p class="bottom-text">
+
+                Already have an account?
+
+                <a href="login.html" id="loginLink">
+                    Login
+                </a>
+
+            </p>
+
+
+        </main>
+
+    </div>
+
+
+    <!-- =========================
+         JAVASCRIPT
+    ========================= -->
+
+        <script>
+
+        /* =========================
+           ROLE (chosen on the first page)
+        ========================= */
+
+           const API_BASE = location.protocol === "file:" ? "http://127.0.0.1:8001"
+               : location.port === "5500" ? "http://" + location.hostname + ":8001"
+               : location.origin;
+        const role =
+            new URLSearchParams(window.location.search).get("role") === "user"
+                ? "user"
+                : "admin";
+
+        const isAdmin = role === "admin";
+
+        const signupUrl = isAdmin
+            ? API_BASE + "/admin/signup"
+            : API_BASE + "/signup";
+
+        document.title = isAdmin ? "Admin Sign Up" : "User Sign Up";
+
+        document.getElementById("signupSubtitle").textContent = isAdmin
+            ? "Create an admin account to manage rooms"
+            : "Create your account to view your rooms";
+
+        document.getElementById("loginLink").href = "login.html?role=" + role;
+
+
+        const signupForm = document.getElementById("signupForm");
+        const button = signupForm.querySelector(".login-btn");
+
+        function resetButton() {
+            button.disabled = false;
+            button.textContent = "Create Account →";
+        }
+
+        /* =========================
+           SIGN UP
+        ========================= */
+
+        signupForm.addEventListener("submit", async function (event) {
+            event.preventDefault();
+
+            const fullName = document.getElementById("fullName").value.trim();
+            const email = document.getElementById("email").value.trim();
+            const password = document.getElementById("password").value;
+            const confirmPassword = document.getElementById("confirmPassword").value;
+            
+            if (!fullName || !email || !password || !confirmPassword) {
+                alert("Please fill in all fields.");
+                return;
+            }
+
+            if (password !== confirmPassword) {
+                alert("Passwords do not match.");
+                return;
+            }
+
+
+            const body = { name: fullName, email: email, password: password };
+
+            button.disabled = true;
+            button.textContent = "Creating Account...";
+
+            try {
+                const response = await fetch(signupUrl, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(body)
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    alert(typeof data.detail === "string" ? data.detail : "Signup failed.");
+                    resetButton();
+                    return;
+                }
+
+                alert(isAdmin ? "Admin account created successfully!" : "Account created successfully!");
+
+                // Back to the login page for the same role
+                window.location.href = "login.html?role=" + role;
+
+            } catch (error) {
+                console.error("Signup error:", error);
+                alert("Unable to connect to the server.");
+                resetButton();
+            }
+        });
+
+        /* =========================
+           GOOGLE BUTTON
+        ========================= */
+
+        document.getElementById("googleBtn").addEventListener("click", function () {
+            alert("Google signup will be connected later.");
+        });
+
+    </script>
+
+</body>
+
+</html>

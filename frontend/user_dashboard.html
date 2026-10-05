@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Portal - My Rooms</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { width: 100%; min-height: 100%; }
+        body {
+            min-height: 100vh;
+            font-family: Arial, Helvetica, sans-serif;
+            background: #faf8f6;
+            color: #211813;
+            overflow-x: hidden;
+        }
+
+        /* Images can't be selected, dragged or long-pressed to save */
+        .no-save {
+            -webkit-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
+            -webkit-user-drag: none;
+        }
+
+        /* ========================= TOP BAR ========================= */
+        .topbar {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            height: 72px;
+            padding: 0 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            background:
+                radial-gradient(circle at 90% 0%, rgba(177, 128, 91, 0.30), transparent 40%),
+                linear-gradient(145deg, #654735 0%, #4d3326 55%, #3d281f 100%);
+            color: #fff;
+        }
+        .back-row { max-width: 1280px; margin: 0 auto; padding: 22px 32px 0; }
+        .back-row .back-btn { margin-bottom: 0; }
+        .back-row + .content { padding-top: 16px; }
+        @media (max-width: 700px) { .back-row { padding: 14px 16px 0; } }
+        .top-left { display: flex; align-items: center; gap: 22px; min-width: 0; }
+        .top-back {
+            min-height: 40px;
+            padding: 0 4px;
+            border: none;
+            background: none;
+            color: #f1d6bf;
+            font-family: inherit;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .top-back:hover { color: #fff; text-decoration: underline; }
+        @media (max-width: 700px) {
+            .top-left { gap: 12px; }
+            .top-back { min-height: 44px; }
+            .brand { font-size: 17px; }
+        }
+        .brand { display: flex; align-items: center; gap: 12px; font-size: 20px; font-weight: 700; }
+        .brand svg { width: 28px; height: 28px; color: #f1d6bf; }
+        .top-right { display: flex; align-items: center; gap: 14px; min-width: 0; }
+        .avatar {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: #f1d6bf;
+            color: #4d3326;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+        .user-name { font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
+        .logout-btn {
+            min-height: 40px;
+            padding: 0 16px;
+            border: 1px solid rgba(255, 255, 255, 0.35);
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.08);
+            color: #fff;
+            font-family: inherit;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        .logout-btn:hover { background: rgba(255, 255, 255, 0.18); }
+
+        /* ========================= CONTENT ========================= */
+        .content { max-width: 1280px; margin: 0 auto; padding: 32px 32px 60px; }
+        .page-head { margin-bottom: 26px; }
+        .page-head h1 { font-size: 36px; letter-spacing: -1px; margin-bottom: 6px; }
+        .page-head p { color: #67564d; font-size: 17px; }
+
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            min-height: 44px;
+            margin-bottom: 14px;
+            padding: 0 14px 0 10px;
+            border: 1px solid #eadfd8;
+            border-radius: 10px;
+            background: #fff;
+            color: #5f402f;
+            font-family: inherit;
+            font-size: 15px;
+            cursor: pointer;
+        }
+        .back-btn:hover { background: #f4ebe5; }
+
+        /* Room cards */
+        .room-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        .room-card {
+            display: block;
+            width: 100%;
+            padding: 0;
+            border: 1px solid #eee6e0;
+            border-radius: 16px;
+            background: #fff;
+            text-align: left;
+            font-family: inherit;
+            color: inherit;
+            cursor: pointer;
+            overflow: hidden;
+            box-shadow: 0 5px 25px rgba(78, 48, 33, 0.04);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .room-card:hover { transform: translateY(-3px); box-shadow: 0 12px 30px rgba(78, 48, 33, 0.10); }
+        .room-cover {
+            height: 150px;
+            background: linear-gradient(145deg, #a47a5d, #765039) center / cover no-repeat;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(255, 255, 255, 0.85);
+        }
+        .room-cover svg { width: 44px; height: 44px; }
+        .room-info { padding: 16px 18px 18px; }
+        .room-info h3 { font-size: 18px; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .room-info span { color: #8d8179; font-size: 14px; }
+
+        /* Image grid */
+        .image-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+            gap: 12px;
+        }
+        .tile {
+            position: relative;
+            aspect-ratio: 1 / 1;
+            border: none;
+            border-radius: 12px;
+            background: #efe5de center / cover no-repeat;
+            cursor: zoom-in;
+            overflow: hidden;
+        }
+        .tile::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            border-radius: 12px;
+            box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.04);
+            transition: background 0.2s ease;
+        }
+        .tile:hover::after { background: rgba(0, 0, 0, 0.08); }
+        .tile.loading { animation: pulse 1.2s ease-in-out infinite; }
+        @keyframes pulse { 50% { opacity: 0.55; } }
+
+        .state {
+            padding: 60px 20px;
+            border: 1px dashed #dccfc6;
+            border-radius: 16px;
+            background: #fff;
+            text-align: center;
+            color: #7d6f66;
+        }
+        .state strong { display: block; margin-bottom: 6px; color: #4d3326; font-size: 18px; }
+        .state.error { color: #c62828; border-color: #f2b8b8; }
+        .more { padding: 26px; text-align: center; color: #8d8179; font-size: 14px; }
+
+        /* ========================= IMAGE VIEWER ========================= */
+        .viewer {
+            position: fixed;
+            inset: 0;
+            z-index: 1000;
+            display: none;
+            flex-direction: column;
+            background: #1c1410;
+            color: #fff;
+        }
+        .viewer.active { display: flex; }
+        .viewer-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 12px 16px;
+        }
+        .viewer-title { min-width: 0; }
+        .viewer-title strong { display: block; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .viewer-title small { font-size: 12px; color: #cdbfb6; }
+        .viewer-tools { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+        .viewer-btn {
+            min-width: 44px;
+            height: 44px;
+            padding: 0 10px;
+            border: none;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.12);
+            color: #fff;
+            font-family: inherit;
+            font-size: 20px;
+            cursor: pointer;
+        }
+        .viewer-btn:hover { background: rgba(255, 255, 255, 0.22); }
+        .viewer-btn:disabled { opacity: 0.35; cursor: default; }
+        .viewer-btn.small-text { font-size: 13px; }
+        .zoom-level { min-width: 50px; text-align: center; font-size: 13px; color: #e8ddd6; }
+        .viewer-stage {
+            position: relative;
+            flex: 1;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 0;
+            touch-action: none;          /* we handle pinch, pan and swipe ourselves */
+            cursor: grab;
+        }
+        .viewer-stage.dragging { cursor: grabbing; }
+        .viewer-image {
+            background: center / contain no-repeat;
+            transform-origin: center center;
+            transition: transform 0.15s ease, translate 0.25s ease, opacity 0.25s ease;
+            pointer-events: none;
+        }
+        .viewer-stage.dragging .viewer-image,
+        .viewer-stage.pinching .viewer-image,
+        .viewer-image.swiping { transition: none; }
+
+        /* Sliding to the next / previous image */
+        @keyframes slideFromRight { from { translate: 90px 0; opacity: 0; } to { translate: 0 0; opacity: 1; } }
+        @keyframes slideFromLeft  { from { translate: -90px 0; opacity: 0; } to { translate: 0 0; opacity: 1; } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .viewer-image.from-right { animation: slideFromRight 0.3s ease; }
+        .viewer-image.from-left  { animation: slideFromLeft 0.3s ease; }
+        .viewer-side.fade { animation: fadeIn 0.3s ease; }
+        .viewer-loading {
+            position: absolute;
+            width: 34px;
+            height: 34px;
+            border: 3px solid rgba(255, 255, 255, 0.6);
+            border-right-color: transparent;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            display: none;
+        }
+        .viewer-loading.show { display: block; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .viewer-nav {
+            position: absolute;
+            top: 50%;
+            z-index: 2;
+            width: 46px;
+            height: 46px;
+            transform: translateY(-50%);
+            border: none;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.14);
+            color: #fff;
+            font-size: 26px;
+            cursor: pointer;
+        }
+        .viewer-nav:hover { background: rgba(255, 255, 255, 0.26); }
+        .viewer-nav.prev { left: 14px; }
+        .viewer-nav.next { right: 14px; }
+        /* Picture on the left, description panel on the right */
+        .viewer-body { flex: 1; display: flex; min-height: 0; }
+        .viewer-side {
+            width: 340px;
+            flex-shrink: 0;
+            padding: 24px 22px;
+            border-left: 1px solid rgba(255, 255, 255, 0.08);
+            background: #241a15;
+            overflow-y: auto;
+        }
+        .viewer-side h3 {
+            margin-bottom: 12px;
+            color: #cdbfb6;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+        }
+        .viewer-caption {
+            color: #f3ebe5;
+            font-size: 15px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        .viewer-caption:empty::before { content: "No description"; color: #8d8179; font-style: italic; }
+
+        /* ========================= MOBILE ========================= */
+        @media (max-width: 600px) {
+            .topbar { height: 62px; padding: 0 16px; }
+            .brand { font-size: 17px; }
+            .user-name { display: none; }
+            .content { padding: 22px 16px 40px; }
+            .page-head h1 { font-size: 27px; }
+            .page-head p { font-size: 15px; }
+            .room-grid { grid-template-columns: 1fr; gap: 14px; }
+            .image-grid { grid-template-columns: repeat(3, 1fr); gap: 6px; }
+            .tile, .tile::after { border-radius: 8px; }
+            .viewer-top { padding: 10px; }
+            .viewer-btn { min-width: 44px; padding: 0 6px; }
+            .zoom-level { display: none; }
+            .viewer-nav { display: none; }   /* swipe instead */
+        }
+        /* Phones and small tablets: description goes under the picture */
+        @media (max-width: 800px) {
+            .viewer-body { flex-direction: column; }
+            .viewer-side {
+                width: auto;
+                max-height: 30vh;
+                padding: 14px 16px calc(14px + env(safe-area-inset-bottom));
+                border-left: none;
+                border-top: 1px solid rgba(255, 255, 255, 0.08);
+            }
+            .viewer-side h3 { margin-bottom: 6px; }
+        }
+
+        /* ========== PHONES: everything easy to tap (PRD: 44 px) ========== */
+        @media (max-width: 700px) {
+            #logoutBtn { min-height: 44px; }
+        }
+    </style>
+</head>
+<body class="no-save">
+
+    <header class="topbar">
+        <div class="brand">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 5.5A2.5 2.5 0 0 1 5.5 3H11v16H5.5A2.5 2.5 0 0 0 3 21.5z"/>
+                <path d="M21 5.5A2.5 2.5 0 0 0 18.5 3H13v16h5.5a2.5 2.5 0 0 1 2.5 2.5z"/>
+            </svg>
+            User Portal
+        </div>
+        <div class="top-right">
+            <div class="avatar" id="avatar">U</div>
+            <span class="user-name" id="userName">User</span>
+            <button type="button" class="logout-btn" id="logoutBtn">Logout</button>
+        </div>
+    </header>
+
+    <div class="back-row"><button type="button" class="back-btn" id="topBack">‹ Back</button></div>
+    <main class="content" id="content"></main>
+
+    <!-- ========================= IMAGE VIEWER ========================= -->
+    <div class="viewer" id="viewer">
+        <div class="viewer-top">
+            <div class="viewer-title">
+                <strong id="viewerTitle">Room</strong>
+                <small id="viewerCounter"></small>
+            </div>
+            <div class="viewer-tools">
+                <button type="button" class="viewer-btn" id="zoomOutBtn" title="Zoom out (-)" aria-label="Zoom out">−</button>
+                <span class="zoom-level" id="zoomLevel">100%</span>
+                <button type="button" class="viewer-btn" id="zoomInBtn" title="Zoom in (+)" aria-label="Zoom in">+</button>
+                <button type="button" class="viewer-btn small-text" id="resetBtn" title="Reset (0)">Reset</button>
+                <button type="button" class="viewer-btn" id="closeBtn" title="Close (Esc)" aria-label="Close">×</button>
+            </div>
+        </div>
+        <div class="viewer-body">
+            <!-- Left: the picture (zoom, pan, swipe) -->
+            <div class="viewer-stage" id="stage">
+                <button type="button" class="viewer-nav prev" id="prevBtn" aria-label="Previous image">‹</button>
+                <div class="viewer-image" id="viewerImage" role="img"></div>
+                <div class="viewer-loading" id="viewerLoading"></div>
+                <button type="button" class="viewer-nav next" id="nextBtn" aria-label="Next image">›</button>
+            </div>
+            <!-- Right: the description -->
+            <aside class="viewer-side">
+                <h3>Description</h3>
+                <div class="viewer-caption" id="viewerCaption"></div>
+            </aside>
+        </div>
+    </div>
+
+    <script>
+        /* BACKEND CONNECTION */
+        const API_BASE = location.protocol === "file:" ? "http://127.0.0.1:8001"          // opened as a file on the Mac
+            : location.port === "5500" ? "http://" + location.hostname + ":8001"   // python3 -m http.server 5500
+            : location.origin;                                                    // served by the backend / online
+
+        /* ---------- LOGIN CHECK ---------- */
+        const token = localStorage.getItem("access_token");
+        if (!token) window.location.href = "login.html?role=user";
+
+        function logout() {
+            ["access_token", "user_id", "user_name", "user_email", "role"].forEach(k => localStorage.removeItem(k));
+            window.location.href = "login.html?role=user";
+        }
+        // Back in the top bar: subject -> its room -> my rooms -> user login
+        document.getElementById("topBack").addEventListener("click", () => {
+            if (/^#subject\/\d+$/.test(location.hash)) location.hash = room ? `room/${room.room_id}` : "";
+            else if (/^#room\/\d+$/.test(location.hash)) location.hash = "";
+            else logout();
+        });
+        document.getElementById("logoutBtn").addEventListener("click", () => {
+            if (confirm("Do you want to logout?")) logout();
+        });
+
+        async function api(path) {
+            let response;
+            try {
+                response = await fetch(API_BASE + path, { headers: { "Authorization": `Bearer ${token}` } });
+            } catch (err) {
+                throw new Error(`Can't reach the server at ${API_BASE}. Is the backend running?`);
+            }
+            if (response.status === 401) {
+                alert("Your session has expired. Please log in again.");
+                logout();
+                throw new Error("Session expired");
+            }
+            const data = await response.json().catch(() => null);
+            if (!response.ok) {
+                const error = new Error((data && data.detail) || `Request failed (${response.status})`);
+                error.status = response.status;
+                throw error;
+            }
+            return data;
+        }
+
+        function escapeHTML(value) {
+            return String(value ?? "").replace(/[&<>"']/g, ch => ({
+                "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+            }[ch]));
+        }
+
+        /* ---------- DOWNLOAD PREVENTION ---------- */
+        // No right-click menu, no dragging images out, no Ctrl/Cmd+S.
+        // (Screenshots can't be blocked in a browser.)
+        document.addEventListener("contextmenu", event => event.preventDefault());
+        document.addEventListener("dragstart", event => event.preventDefault());
+        document.addEventListener("keydown", event => {
+            if ((event.ctrlKey || event.metaKey) && ["s", "p"].includes(event.key.toLowerCase())) {
+                event.preventDefault();
+            }
+        });
+
+        /* ---------- USER NAME ---------- */
+        function showUser(name) {
+            document.getElementById("userName").textContent = name;
+            document.getElementById("avatar").textContent = (name || "U").charAt(0).toUpperCase();
+        }
+        let userName = localStorage.getItem("user_name") || "User";
+        showUser(userName);
+        api("/me").then(me => {
+            userName = me.name;
+            localStorage.setItem("user_name", me.name);
+            showUser(me.name);
+        }).catch(err => {
+            if (err.status === 403) {   // logged in as an admin, not as a user
+                alert("This page is for users. Please log in as a user.");
+                logout();
+            }
+        });
+
+        /* ---------- PAGES ----------
+           #             -> my rooms
+           #room/5       -> subjects of room 5
+           #subject/9    -> images of subject 9
+        */
+        const content = document.getElementById("content");
+        const ROOM_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>';
+
+        function route() {
+            closeViewer(true);
+            const roomMatch = location.hash.match(/^#room\/(\d+)$/);
+            const subjectMatch = location.hash.match(/^#subject\/(\d+)$/);
+            if (subjectMatch) showSubject(Number(subjectMatch[1]));
+            else if (roomMatch) showRoomSubjects(Number(roomMatch[1]));
+            else showMyRooms();
+            window.scrollTo(0, 0);
+        }
+        window.addEventListener("hashchange", route);
+
+        function showState(title, text, isError = false) {
+            return `<div class="state${isError ? " error" : ""}"><strong>${escapeHTML(title)}</strong>${escapeHTML(text)}</div>`;
+        }
+
+        /* ---------- MY ROOMS ---------- */
+        async function showMyRooms() {
+            content.innerHTML = `
+                <div class="page-head">
+                    <h1>Welcome, ${escapeHTML(userName)}</h1>
+                    <p>Your rooms</p>
+                </div>
+                <div id="roomsArea"><div class="more">Loading your rooms...</div></div>`;
+            const area = document.getElementById("roomsArea");
+            try {
+                const rooms = await api("/me/rooms");
+                if (!rooms.length) {
+                    area.innerHTML = showState("No rooms yet", "Ask your admin to add you to a room.");
+                    return;
+                }
+                area.innerHTML = `<div class="room-grid">${rooms.map(room => `
+                    <button type="button" class="room-card" data-id="${room.id}">
+                        <div class="room-cover" ${room.cover_url ? `style="background-image:url('${API_BASE + room.cover_url}')"` : ""}>
+                            ${room.cover_url ? "" : ROOM_ICON}
+                        </div>
+                        <div class="room-info">
+                            <h3>${escapeHTML(room.name)}</h3>
+                            <span>${room.subject_count} ${room.subject_count === 1 ? "subject" : "subjects"} · ${room.image_count} ${room.image_count === 1 ? "image" : "images"}</span>
+                        </div>
+                    </button>`).join("")}</div>`;
+                area.querySelectorAll(".room-card").forEach(card => {
+                    card.addEventListener("click", () => { location.hash = `room/${card.dataset.id}`; });
+                });
+            } catch (err) {
+                area.innerHTML = showState("Couldn't load your rooms", err.message, true);
+            }
+        }
+
+        /* ---------- ONE ROOM (list of subjects) ---------- */
+        async function showRoomSubjects(roomId) {
+            content.innerHTML = `
+                <div class="page-head"><h1 id="roomTitle">Loading...</h1><p id="roomCount"></p></div>
+                <div id="subjectsArea"></div>`;
+            const area = document.getElementById("subjectsArea");
+
+            try {
+                const [roomInfo, subjects] = await Promise.all([
+                    api(`/rooms/${roomId}`),
+                    api(`/rooms/${roomId}/subjects`)
+                ]);
+                document.getElementById("roomTitle").textContent = roomInfo.name;
+                document.getElementById("roomCount").textContent =
+                    `${subjects.length} ${subjects.length === 1 ? "subject" : "subjects"}`;
+
+                if (!subjects.length) {
+                    area.innerHTML = showState("No subjects yet", "Subjects added to this room will show up here.");
+                    return;
+                }
+                area.innerHTML = `<div class="room-grid">${subjects.map(subject => `
+                    <button type="button" class="room-card" data-id="${subject.id}">
+                        <div class="room-cover" ${subject.cover_url ? `style="background-image:url('${API_BASE + subject.cover_url}')"` : ""}>
+                            ${subject.cover_url ? "" : ROOM_ICON}
+                        </div>
+                        <div class="room-info">
+                            <h3>${escapeHTML(subject.title)}</h3>
+                            <span>${subject.image_count} ${subject.image_count === 1 ? "image" : "images"}</span>
+                        </div>
+                    </button>`).join("")}</div>`;
+                area.querySelectorAll(".room-card").forEach(card => {
+                    card.addEventListener("click", () => { location.hash = `subject/${card.dataset.id}`; });
+                });
+            } catch (err) {
+                document.getElementById("roomTitle").textContent = "Room";
+                area.innerHTML = err.status === 403
+                    ? showState("No access", "You don't have access to this room.", true)
+                    : showState("Couldn't load this room", err.message, true);
+            }
+        }
+
+        /* ---------- ONE SUBJECT (image grid) ---------- */
+        let room = null;          // the subject being viewed: { id, title, room_id, room_name, image_count }
+        let images = [];          // { id, name, description, url, thumb_url, expires }
+        let total = 0;
+        let loadingMore = false;
+        let pageObserver = null;
+        let tileObserver = null;
+
+        async function showSubject(subjectId) {
+            room = null;
+            images = [];
+            total = 0;
+            if (pageObserver) pageObserver.disconnect();
+            if (tileObserver) tileObserver.disconnect();
+
+            content.innerHTML = `
+                <div class="page-head"><h1 id="roomTitle">Loading...</h1><p id="roomCount"></p></div>
+                <div id="gridArea"></div>
+                <div class="more" id="moreRow"></div>`;
+
+            let subject;
+            try {
+                subject = await api(`/subjects/${subjectId}`);
+            } catch (err) {
+                document.getElementById("roomTitle").textContent = "Subject";
+                document.getElementById("gridArea").innerHTML = err.status === 403
+                    ? showState("No access", "You don't have access to this subject.", true)
+                    : showState("Couldn't load this subject", err.message, true);
+                return;
+            }
+            room = subject;
+            document.getElementById("roomTitle").textContent = subject.title;
+            document.getElementById("roomCount").textContent =
+                `${subject.room_name} · ${subject.image_count} ${subject.image_count === 1 ? "image" : "images"}`;
+
+            if (!subject.image_count) {
+                document.getElementById("gridArea").innerHTML = showState("No images yet", "Images added to this subject will show up here.");
+                return;
+            }
+            document.getElementById("gridArea").innerHTML = `<div class="image-grid" id="imageGrid"></div>`;
+
+            // Thumbnails load only when they scroll into view
+            tileObserver = new IntersectionObserver(entries => {
+                entries.forEach(entry => {
+                    if (!entry.isIntersecting) return;
+                    tileObserver.unobserve(entry.target);
+                    loadTile(entry.target);
+                });
+            }, { rootMargin: "200px" });
+
+            // More images load when the bottom of the grid comes into view
+            pageObserver = new IntersectionObserver(entries => {
+                if (entries[0].isIntersecting) loadMore();
+            }, { rootMargin: "400px" });
+            pageObserver.observe(document.getElementById("moreRow"));
+
+            await loadMore();
+        }
+
+        async function loadMore() {
+            if (!room || loadingMore || (total && images.length >= total)) return;
+            loadingMore = true;
+            const moreRow = document.getElementById("moreRow");
+            if (moreRow) moreRow.textContent = "Loading images...";
+            try {
+                const roomId = room.id;
+                const data = await api(`/subjects/${roomId}/images?offset=${images.length}&limit=30`);
+                if (!room || room.id !== roomId) return;     // the user left this room meanwhile
+                total = data.total;
+                const grid = document.getElementById("imageGrid");
+                data.images.forEach(image => {
+                    const index = images.push(image) - 1;
+                    const tile = document.createElement("button");
+                    tile.type = "button";
+                    tile.className = "tile loading";
+                    tile.dataset.index = index;
+                    tile.setAttribute("aria-label", image.name || "Image");
+                    tile.addEventListener("click", () => openViewer(index));
+                    grid.appendChild(tile);
+                    tileObserver.observe(tile);
+                });
+                if (moreRow) moreRow.textContent = "";
+            } catch (err) {
+                if (moreRow) moreRow.textContent = err.message;
+            } finally {
+                loadingMore = false;
+            }
+        }
+
+        /* Signed links expire after 10 minutes; get new ones when needed */
+        async function freshLinks(image) {
+            if (image.expires - Date.now() / 1000 > 60) return image;
+            const links = await api(`/images/${image.id}/link`);
+            Object.assign(image, links);
+            return image;
+        }
+
+        async function loadTile(tile) {
+            const image = images[Number(tile.dataset.index)];
+            try {
+                await freshLinks(image);
+                const loader = new Image();
+                loader.onload = () => {
+                    tile.style.backgroundImage = `url('${API_BASE + image.thumb_url}')`;
+                    tile.classList.remove("loading");
+                };
+                loader.onerror = () => tile.classList.remove("loading");
+                loader.src = API_BASE + image.thumb_url;
+            } catch (err) {
+                tile.classList.remove("loading");
+            }
+        }
+
+        /* ---------- IMAGE VIEWER ---------- */
+        const viewer = document.getElementById("viewer");
+        const stage = document.getElementById("stage");
+        const viewerImage = document.getElementById("viewerImage");
+        const viewerLoading = document.getElementById("viewerLoading");
+        const zoomLevel = document.getElementById("zoomLevel");
+        const zoomInBtn = document.getElementById("zoomInBtn");
+        const zoomOutBtn = document.getElementById("zoomOutBtn");
+        const prevBtn = document.getElementById("prevBtn");
+        const nextBtn = document.getElementById("nextBtn");
+
+        const MIN_ZOOM = 1, MAX_ZOOM = 5, ZOOM_STEP = 1.25;
+        let current = -1;
+        let zoom = 1, panX = 0, panY = 0;
+        let natural = { w: 0, h: 0 };
+        let showToken = 0;
+
+        /* Size the picture to fit the screen (small pictures are not enlarged) */
+        function fitImage() {
+            if (!natural.w) return;
+            const maxW = stage.clientWidth * 0.94;
+            const maxH = stage.clientHeight * 0.94;
+            const scale = Math.min(1, maxW / natural.w, maxH / natural.h);
+            viewerImage.style.width = `${Math.round(natural.w * scale)}px`;
+            viewerImage.style.height = `${Math.round(natural.h * scale)}px`;
+        }
+
+        function applyZoom() {
+            const maxX = Math.max(0, (viewerImage.offsetWidth * zoom - stage.clientWidth) / 2);
+            const maxY = Math.max(0, (viewerImage.offsetHeight * zoom - stage.clientHeight) / 2);
+            panX = Math.min(maxX, Math.max(-maxX, panX));
+            panY = Math.min(maxY, Math.max(-maxY, panY));
+            viewerImage.style.transform = `translate(${panX}px, ${panY}px) scale(${zoom})`;
+            zoomLevel.textContent = `${Math.round(zoom * 100)}%`;
+            zoomOutBtn.disabled = zoom <= MIN_ZOOM;
+            zoomInBtn.disabled = zoom >= MAX_ZOOM;
+        }
+
+        /* Zoom while keeping the point under the finger/mouse still */
+        function zoomTo(newZoom, clientX, clientY) {
+            newZoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, newZoom));
+            const rect = stage.getBoundingClientRect();
+            const px = clientX === undefined ? 0 : clientX - rect.left - rect.width / 2;
+            const py = clientY === undefined ? 0 : clientY - rect.top - rect.height / 2;
+            const ratio = newZoom / zoom;
+            panX = px - ratio * (px - panX);
+            panY = py - ratio * (py - panY);
+            zoom = newZoom;
+            if (zoom === MIN_ZOOM) { panX = 0; panY = 0; }
+            applyZoom();
+        }
+
+        function resetZoom() { zoom = MIN_ZOOM; panX = 0; panY = 0; applyZoom(); }
+
+        let slideDirection = 0;    // 1 = next (slides in from the right), -1 = previous
+
+        /* Restarts a CSS animation on an element */
+        function replay(element, className) {
+            element.classList.remove("from-left", "from-right", "fade");
+            void element.offsetWidth;
+            if (className) element.classList.add(className);
+        }
+
+        async function showImage(index) {
+            current = index;
+            const myToken = ++showToken;
+            const image = images[index];
+
+            document.getElementById("viewerTitle").textContent = room ? `${room.room_name} · ${room.title}` : "";
+            document.getElementById("viewerCounter").textContent = `Image ${index + 1} of ${total}`;
+            document.getElementById("viewerCaption").textContent = image.description || "";
+            replay(document.querySelector(".viewer-side"), "fade");     // description changes with the image
+            viewerImage.style.translate = "";
+            viewerImage.style.opacity = "";
+            prevBtn.style.visibility = index > 0 ? "visible" : "hidden";
+            nextBtn.style.visibility = index < total - 1 ? "visible" : "hidden";
+
+            viewerImage.style.backgroundImage = "none";
+            viewerLoading.classList.add("show");
+            resetZoom();
+
+            try {
+                await freshLinks(image);
+                const loader = new Image();
+                loader.onload = () => {
+                    if (myToken !== showToken) return;      // another image was opened meanwhile
+                    natural = { w: loader.naturalWidth, h: loader.naturalHeight };
+                    viewerImage.style.backgroundImage = `url('${API_BASE + image.url}')`;
+                    viewerLoading.classList.remove("show");
+                    fitImage();
+                    resetZoom();
+                    replay(viewerImage, slideDirection > 0 ? "from-right" : slideDirection < 0 ? "from-left" : "");
+                    slideDirection = 0;
+                };
+                loader.onerror = () => {
+                    if (myToken !== showToken) return;
+                    viewerLoading.classList.remove("show");
+                    document.getElementById("viewerCaption").textContent = "This image couldn't be loaded.";
+                };
+                loader.src = API_BASE + image.url;
+            } catch (err) {
+                viewerLoading.classList.remove("show");
+                document.getElementById("viewerCaption").textContent = err.message;
+            }
+        }
+
+        function openViewer(index) {
+            viewer.classList.add("active");
+            document.body.style.overflow = "hidden";
+            showImage(index);
+        }
+
+        function closeViewer(silent) {
+            if (!viewer.classList.contains("active")) return;
+            viewer.classList.remove("active");
+            document.body.style.overflow = "";
+            viewerImage.style.backgroundImage = "none";
+            showToken++;
+        }
+
+        async function moveViewer(step) {
+            const target = current + step;
+            if (target < 0 || target >= total) return;
+            if (target >= images.length) await loadMore();     // next image isn't loaded yet
+            if (target < images.length) {
+                slideDirection = step;
+                showImage(target);
+            }
+        }
+
+        zoomInBtn.addEventListener("click", () => zoomTo(zoom * ZOOM_STEP));
+        zoomOutBtn.addEventListener("click", () => zoomTo(zoom / ZOOM_STEP));
+        document.getElementById("resetBtn").addEventListener("click", resetZoom);
+        document.getElementById("closeBtn").addEventListener("click", () => closeViewer());
+        prevBtn.addEventListener("click", () => moveViewer(-1));
+        nextBtn.addEventListener("click", () => moveViewer(1));
+        window.addEventListener("resize", () => {
+            if (viewer.classList.contains("active")) { fitImage(); applyZoom(); }
+        });
+
+        /* Mouse wheel / trackpad scroll and Chrome pinch */
+        let wheelSlideLock = 0;
+        stage.addEventListener("wheel", event => {
+            event.preventDefault();
+
+            // Two-finger sideways swipe on a trackpad (at 100%) = next / previous image
+            if (zoom === MIN_ZOOM && !event.ctrlKey && Math.abs(event.deltaX) > Math.abs(event.deltaY)) {
+                if (Math.abs(event.deltaX) > 20 && Date.now() > wheelSlideLock) {
+                    wheelSlideLock = Date.now() + 700;
+                    moveViewer(event.deltaX > 0 ? 1 : -1);
+                }
+                return;
+            }
+
+            const speed = event.ctrlKey ? 0.01 : 0.002;
+            zoomTo(zoom * Math.exp(-event.deltaY * speed), event.clientX, event.clientY);
+        }, { passive: false });
+
+        /* Mac trackpad pinch in Safari (on iPhone the touch code below handles pinch) */
+        let gestureStartZoom = 1;
+        stage.addEventListener("gesturestart", event => { event.preventDefault(); gestureStartZoom = zoom; });
+        stage.addEventListener("gesturechange", event => {
+            event.preventDefault();
+            if (pointers.size >= 2) return;
+            zoomTo(gestureStartZoom * event.scale, event.clientX, event.clientY);
+        });
+        stage.addEventListener("gestureend", event => event.preventDefault());
+
+        /* Touch and mouse: drag to pan, two fingers to pinch, swipe for next/previous */
+        const pointers = new Map();
+        let drag = null;       // panning while zoomed in
+        let pinch = null;      // two-finger zoom
+        let swipe = null;      // one-finger swipe at 100%
+        let lastTap = { time: 0, x: 0, y: 0 };
+
+        function distance(a, b) { return Math.hypot(a.x - b.x, a.y - b.y); }
+
+        stage.addEventListener("pointerdown", event => {
+            if (event.target.closest(".viewer-nav")) return;
+            stage.setPointerCapture(event.pointerId);
+            pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+
+            if (pointers.size === 2) {
+                const [a, b] = [...pointers.values()];
+                pinch = { dist: distance(a, b), zoom };
+                drag = null;
+                swipe = null;
+                stage.classList.add("pinching");
+            } else if (pointers.size === 1) {
+                if (zoom > MIN_ZOOM) {
+                    drag = { x: event.clientX, y: event.clientY, panX, panY };
+                    stage.classList.add("dragging");
+                } else {
+                    swipe = { x: event.clientX, y: event.clientY };
+                }
+            }
+        });
+
+        stage.addEventListener("pointermove", event => {
+            if (!pointers.has(event.pointerId)) return;
+            pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+
+            if (pinch && pointers.size >= 2) {
+                const [a, b] = [...pointers.values()];
+                zoomTo(pinch.zoom * distance(a, b) / pinch.dist, (a.x + b.x) / 2, (a.y + b.y) / 2);
+            } else if (drag) {
+                panX = drag.panX + event.clientX - drag.x;
+                panY = drag.panY + event.clientY - drag.y;
+                applyZoom();
+            } else if (swipe) {
+                // The picture follows the finger / mouse while sliding
+                const dx = event.clientX - swipe.x;
+                viewerImage.classList.add("swiping");
+                viewerImage.style.translate = `${dx}px 0`;
+                viewerImage.style.opacity = String(1 - Math.min(Math.abs(dx) / 700, 0.5));
+            }
+        });
+
+        function endPointer(event) {
+            if (!pointers.has(event.pointerId)) return;
+            pointers.delete(event.pointerId);
+
+            if (pointers.size < 2 && pinch) {
+                pinch = null;
+                stage.classList.remove("pinching");
+            }
+            if (pointers.size === 0) {
+                drag = null;
+                stage.classList.remove("dragging");
+
+                // Swipe left/right at 100% for the next/previous image
+                if (swipe && zoom === MIN_ZOOM) {
+                    const dx = event.clientX - swipe.x;
+                    const dy = event.clientY - swipe.y;
+                    const step = dx < 0 ? 1 : -1;
+                    const target = current + step;
+                    viewerImage.classList.remove("swiping");
+                    if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5 && target >= 0 && target < total) {
+                        moveViewer(step);
+                    } else {
+                        // Not far enough (or no more images): slide back
+                        viewerImage.style.translate = "0px 0";
+                        viewerImage.style.opacity = "";
+                    }
+                }
+                swipe = null;
+
+                // Double-tap on touch screens toggles zoom
+                if (event.pointerType === "touch" && event.type === "pointerup") {
+                    const now = Date.now();
+                    const near = Math.hypot(event.clientX - lastTap.x, event.clientY - lastTap.y) < 30;
+                    if (now - lastTap.time < 300 && near) {
+                        if (zoom === MIN_ZOOM) zoomTo(2.5, event.clientX, event.clientY);
+                        else resetZoom();
+                        lastTap.time = 0;
+                    } else {
+                        lastTap = { time: now, x: event.clientX, y: event.clientY };
+                    }
+                }
+            }
+        }
+        stage.addEventListener("pointerup", endPointer);
+        stage.addEventListener("pointercancel", endPointer);
+
+        /* Double-click with a mouse toggles zoom */
+        stage.addEventListener("dblclick", event => {
+            if (event.target.closest(".viewer-nav")) return;
+            if (zoom === MIN_ZOOM) zoomTo(2.5, event.clientX, event.clientY);
+            else resetZoom();
+        });
+
+        /* Keyboard: Esc, arrows, + / -, 0 */
+        document.addEventListener("keydown", event => {
+            if (!viewer.classList.contains("active")) return;
+            const actions = {
+                "Escape": () => closeViewer(),
+                "ArrowLeft": () => moveViewer(-1),
+                "ArrowRight": () => moveViewer(1),
+                "+": () => zoomTo(zoom * ZOOM_STEP),
+                "=": () => zoomTo(zoom * ZOOM_STEP),
+                "-": () => zoomTo(zoom / ZOOM_STEP),
+                "0": resetZoom
+            };
+            if (actions[event.key]) { event.preventDefault(); actions[event.key](); }
+        });
+
+        /* ---------- START ---------- */
+        if (token) route();
+    </script>
+</body>
+</html>

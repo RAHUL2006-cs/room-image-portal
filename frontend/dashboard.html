@@ -1,0 +1,1424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Portal - Dashboard</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { width: 100%; min-height: 100%; }
+        body {
+            width: 100%;
+            min-width: 0;
+            min-height: 100vh;
+            overflow-x: hidden;
+            font-family: Arial, Helvetica, sans-serif;
+            background: #faf8f6;
+            color: #211813;
+        }
+
+        /* ========================= SIDEBAR ========================= */
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 260px;
+            height: 100vh;
+            background:
+                radial-gradient(circle at 100% 85%, rgba(177, 128, 91, 0.30), transparent 30%),
+                linear-gradient(145deg, #654735 0%, #4d3326 55%, #3d281f 100%);
+            color: white;
+            padding: 28px 15px;
+            overflow: hidden;
+            z-index: 100;
+        }
+        .sidebar::before {
+            content: "";
+            position: absolute;
+            width: 400px;
+            height: 400px;
+            border: 1px solid rgba(235, 198, 168, 0.20);
+            border-radius: 50%;
+            left: -180px;
+            bottom: -70px;
+            transform: rotate(-25deg);
+        }
+        .sidebar::after {
+            content: "";
+            position: absolute;
+            width: 350px;
+            height: 350px;
+            border: 1px solid rgba(235, 198, 168, 0.16);
+            border-radius: 50%;
+            left: -120px;
+            bottom: -150px;
+        }
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            padding: 0 18px 34px;
+            position: relative;
+            z-index: 2;
+        }
+        .logo-icon {
+            width: 34px;
+            height: 34px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #f1d6bf;
+        }
+        .logo-icon svg { width: 34px; height: 34px; }
+        .logo-text { font-size: 23px; font-weight: 700; letter-spacing: -0.5px; }
+
+        .nav { position: relative; z-index: 2; display: flex; flex-direction: column; gap: 7px; }
+        .nav-item {
+            height: 56px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            padding: 0 20px;
+            border-radius: 12px;
+            color: rgba(255, 255, 255, 0.92);
+            text-decoration: none;
+            font-size: 16px;
+            font-weight: 500;
+            transition: 0.25s ease;
+        }
+        .nav-item:hover { background: rgba(255, 255, 255, 0.10); }
+        .nav-item.active {
+            background: rgba(205, 166, 138, 0.42);
+            box-shadow: inset 4px 0 0 #f4e2d3, 0 5px 20px rgba(0, 0, 0, 0.05);
+        }
+        .nav-icon { width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; }
+        .nav-icon svg { width: 23px; height: 23px; stroke-width: 1.8; }
+
+        /* ========================= MAIN ========================= */
+        .main {
+            width: calc(100% - 260px);
+            height: 100vh;
+            min-height: 100vh;
+            margin-left: 260px;
+            overflow-x: hidden;
+            overflow-y: auto;
+        }
+
+        /* ========================= TOP BAR ========================= */
+        .topbar {
+            width: 100%;
+            height: 80px;
+            background: rgba(255, 255, 255, 0.82);
+            border-bottom: 1px solid #eee6e0;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding: 0 35px;
+            gap: 25px;
+        }
+        .notification {
+            width: 38px;
+            height: 38px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #553a2c;
+            cursor: pointer;
+        }
+        .notification svg { width: 24px; height: 24px; }
+        .profile { display: flex; align-items: center; gap: 12px; cursor: pointer; }
+        .profile-avatar {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: #674837;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: 600;
+        }
+        .profile-name { font-size: 16px; color: #3c2a21; }
+        .profile-arrow { width: 18px; height: 18px; color: #634535; }
+
+        /* ========================= CONTENT ========================= */
+        .content { width: 100%; max-width: none; padding: 32px 35px 45px; }
+        .welcome-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 28px;
+        }
+        .welcome h1 { font-size: 43px; line-height: 1.1; letter-spacing: -1.5px; margin-bottom: 8px; }
+        .welcome p { color: #67564d; font-size: 20px; }
+        .back-link {
+            display: inline-block;
+            margin-bottom: 14px;
+            color: #7a5a47;
+            font-size: 15px;
+            font-weight: 600;
+            text-decoration: none;
+        }
+        .back-link:hover { color: #4d2f20; text-decoration: underline; }
+        .date-section { text-align: right; min-width: 290px; }
+        .date {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 13px;
+            color: #5d4b42;
+            font-size: 17px;
+            margin-bottom: 14px;
+        }
+        .date svg { width: 21px; height: 21px; }
+        .quote {
+            background: #f4ebe5;
+            border-radius: 10px;
+            padding: 13px 18px;
+            color: #795f50;
+            font-size: 14px;
+            text-align: left;
+        }
+
+        /* ========================= STAT CARDS ========================= */
+        .stats-grid {
+            width: 100%;
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 16px;
+            margin-bottom: 25px;
+        }
+        .stat-card {
+            position: relative;
+            min-height: 165px;
+            background: rgba(255, 255, 255, 0.88);
+            border: 1px solid #eee6e0;
+            border-radius: 15px;
+            padding: 24px;
+            display: flex;
+            align-items: flex-start;
+            gap: 22px;
+            overflow: hidden;
+            box-shadow: 0 5px 25px rgba(78, 48, 33, 0.035);
+        }
+        .stat-card::after {
+            content: "";
+            position: absolute;
+            width: 130px;
+            height: 130px;
+            border-radius: 50%;
+            background: rgba(184, 143, 113, 0.07);
+            right: -45px;
+            bottom: -65px;
+        }
+        .stat-icon {
+            flex-shrink: 0;
+            width: 74px;
+            height: 74px;
+            border-radius: 17px;
+            background: linear-gradient(145deg, #92705a, #694936);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .stat-card:nth-child(2) .stat-icon { background: linear-gradient(145deg, #d99d7d, #bd785b); }
+        .stat-card:nth-child(3) .stat-icon { background: linear-gradient(145deg, #9b765e, #76533d); }
+        .stat-card:nth-child(4) .stat-icon { background: linear-gradient(145deg, #a8836b, #815d45); }
+        .stat-icon svg { width: 36px; height: 36px; stroke-width: 1.6; }
+        .stat-info { position: relative; z-index: 1; }
+        .stat-title { font-size: 16px; margin: 7px 0 9px; color: #2d211c; }
+        .stat-number { font-size: 35px; line-height: 1; font-weight: 700; margin-bottom: 13px; }
+        .stat-growth { display: flex; align-items: center; gap: 7px; color: #139b38; font-size: 14px; }
+        .growth-arrow { font-size: 22px; line-height: 12px; }
+
+        /* ========================= ROOMS SECTION ========================= */
+        .rooms-card {
+            width: 100%;
+            min-width: 0;
+            background: rgba(255, 255, 255, 0.90);
+            border: 1px solid #eee6e0;
+            border-radius: 15px;
+            padding: 27px 24px 20px;
+            box-shadow: 0 5px 25px rgba(78, 48, 33, 0.035);
+        }
+        .rooms-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 10px 24px;
+        }
+        .rooms-title { display: flex; align-items: flex-start; gap: 17px; }
+        .rooms-title-icon { color: #5f402f; margin-top: 2px; }
+        .rooms-title-icon svg { width: 30px; height: 30px; }
+        .rooms-title h2 { font-size: 28px; margin-bottom: 5px; }
+        .rooms-title p { font-size: 16px; color: #66554c; }
+        .room-actions { display: flex; align-items: center; gap: 12px; }
+        .create-room {
+            border: none;
+            background: linear-gradient(145deg, #76523d, #573828);
+            color: white;
+            height: 47px;
+            padding: 0 21px;
+            border-radius: 11px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 7px 18px rgba(91, 56, 39, 0.14);
+            transition: 0.2s ease;
+        }
+        .create-room:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 10px 22px rgba(91, 56, 39, 0.20);
+        }
+        .create-room svg { width: 20px; height: 20px; }
+        .search-button {
+            width: 48px;
+            height: 47px;
+            border: 1px solid #eadfd8;
+            border-radius: 11px;
+            background: #fbf8f6;
+            color: #684b3a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: 0.2s ease;
+        }
+        .search-button:hover { background: #f4ebe5; }
+        .search-button svg { width: 22px; height: 22px; }
+
+        /* ========================= TABLE ========================= */
+        .table-wrapper { width: 100%; max-width: 100%; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; min-width: 900px; }
+        thead tr { background: #f5ece6; }
+        th {
+            text-align: left;
+            padding: 17px 16px;
+            font-size: 15px;
+            font-weight: 600;
+            color: #291e19;
+        }
+        th:first-child { border-radius: 11px 0 0 11px; }
+        th:last-child { border-radius: 0 11px 11px 0; }
+        td {
+            padding: 12px 16px;
+            border-bottom: 1px solid #eee7e2;
+            font-size: 16px;
+            color: #30251f;
+            height: 63px;
+        }
+        tbody tr:last-child td { border-bottom: none; }
+        tbody tr:hover { background: #fcfaf8; }
+        .room-name { display: flex; align-items: center; gap: 15px; }
+        .room-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: linear-gradient(145deg, #a47a5d, #765039);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        tbody tr:nth-child(3) .room-icon { background: #f4ebe5; color: #604535; }
+        tbody tr:nth-child(4) .room-icon { background: #efd9bd; color: #654532; }
+        tbody tr:nth-child(5) .room-icon { background: #f0d6b7; color: #654532; }
+        tbody tr:nth-child(6) .room-icon { background: #e5c7a3; color: #654532; }
+        .room-icon svg { width: 21px; height: 21px; }
+
+        /* ========================= TABLE ACTIONS ========================= */
+        .actions { display: flex; align-items: center; gap: 12px; }
+        .action-btn {
+            width: 53px;
+            height: 42px;
+            border: none;
+            border-radius: 10px;
+            background: #faf7f4;
+            color: #795b49;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: 0.2s ease;
+        }
+        .action-btn:hover { background: #f1e6df; }
+        .action-btn.delete { color: #e32626; background: #faeeee; }
+        .action-btn.delete:hover { background: #f8dddd; }
+        .action-btn svg { width: 20px; height: 20px; }
+
+                /* ========================= RESPONSIVE ========================= */
+        @media (max-width: 1200px) {
+            .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .welcome-section { flex-direction: column; gap: 20px; }
+            .date-section { text-align: left; min-width: 0; }
+            .date { justify-content: flex-start; }
+            .content { padding: 28px 25px 40px; }
+        }
+        @media (max-width: 850px) {
+            .sidebar { width: 82px; padding: 28px 10px; }
+            .main { width: calc(100% - 82px); margin-left: 82px; }
+            .logo { justify-content: center; padding: 0 0 35px; }
+            .logo-text { display: none; }
+            .nav-item { justify-content: center; padding: 0; }
+            .nav-item span:last-child { display: none; }
+            .content { padding: 25px 20px; }
+        }
+        @media (max-width: 600px) {
+            html, body { overflow-x: hidden; }
+            .sidebar { width: 70px; padding: 22px 8px; }
+            .main {
+                width: calc(100% - 70px);
+                height: auto;
+                min-height: 100vh;
+                margin-left: 70px;
+                overflow: visible;
+            }
+            .topbar { height: 70px; padding: 0 18px; }
+            .profile-name { display: none; }
+            .stats-grid { grid-template-columns: 1fr; }
+            .welcome h1 { font-size: 34px; }
+            .welcome p { font-size: 17px; }
+            .rooms-header { flex-direction: column; align-items: flex-start; gap: 20px; }
+            .room-actions { width: 100%; }
+            .create-room { flex: 1; justify-content: center; }
+            .content { padding: 20px 15px 30px; }
+        }
+
+        /* ========================= CREATE ROOM MODAL ========================= */
+        .room-modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(43, 30, 22, 0.48);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            padding: 20px;
+        }
+        .room-modal-overlay.active { display: flex; }
+        .room-modal {
+            width: 100%;
+            max-width: 650px;
+            max-height: 92vh;
+            background: #fffdfb;
+            border-radius: 18px;
+            padding: 30px 38px 28px;
+            box-shadow: 0 25px 70px rgba(65, 42, 28, 0.22);
+            overflow-y: auto;
+            animation: roomModalIn 0.22s ease;
+        }
+        @keyframes roomModalIn {
+            from { opacity: 0; transform: translateY(12px) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .room-modal-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            margin-bottom: 26px;
+        }
+        .room-modal-title h2 {
+            color: #4d2f20;
+            font-size: 29px;
+            font-weight: 600;
+            letter-spacing: -0.5px;
+        }
+        .room-modal-title p { margin-top: 7px; color: #82766e; font-size: 14px; }
+        .room-modal-close {
+            width: 38px;
+            height: 38px;
+            border: none;
+            background: transparent;
+            color: #6d584b;
+            font-size: 28px;
+            line-height: 1;
+            cursor: pointer;
+            border-radius: 10px;
+            transition: 0.2s ease;
+        }
+        .room-modal-close:hover { background: #f4ece7; color: #4d2f20; }
+
+        /* FORM */
+        .room-field { margin-bottom: 20px; }
+        .room-field > label {
+            display: block;
+            margin-bottom: 8px;
+            color: #4d3326;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        .room-input {
+            width: 100%;
+            height: 50px;
+            padding: 0 16px;
+            border: 1px solid #dfd3cb;
+            border-radius: 11px;
+            background: #fff;
+            color: #3e3028;
+            font-size: 15px;
+            outline: none;
+            transition: 0.2s ease;
+        }
+        .room-input:focus {
+            border-color: #a66a47;
+            box-shadow: 0 0 0 3px rgba(166, 106, 71, 0.09);
+        }
+        .room-input::placeholder { color: #aaa09a; }
+
+        /* USERS SELECT */
+        .room-field > .user-select-label { display: flex; align-items: center; gap: 6px; }
+        .user-select-label span { color: #8b7b71; font-weight: 400; font-size: 13px; }
+        .user-select { position: relative; }
+                /* The bar that holds the selected-user chips and the search box */
+        .user-select-box {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 6px;
+            min-height: 50px;
+            padding: 7px 44px 7px 48px;
+            border: 1px solid #cdbeb4;
+            border-radius: 11px;
+            background: #fff;
+            cursor: text;
+            transition: 0.2s ease;
+        }
+        .user-select-box:focus-within {
+            border-color: #9a5f3d;
+            box-shadow: 0 0 0 3px rgba(154, 95, 61, 0.09);
+        }
+        .user-select-input {
+            flex: 1;
+            min-width: 140px;
+            height: 34px;
+            border: none;
+            background: transparent;
+            color: #3e3028;
+            font-size: 15px;
+            outline: none;
+        }
+        .user-select-input::placeholder { color: #9d9189; }
+        .user-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            max-width: 220px;
+            height: 30px;
+            padding: 0 6px 0 4px;
+            border-radius: 20px;
+            background: #f4e7de;
+            color: #5a3a29;
+            font-size: 13px;
+            font-weight: 600;
+        }
+        .user-chip-avatar {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: #8b5a3c;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            flex-shrink: 0;
+        }
+        .user-chip-name { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+        .user-chip-remove {
+            width: 20px;
+            height: 20px;
+            border: none;
+            border-radius: 50%;
+            background: transparent;
+            color: #8b6a58;
+            font-size: 15px;
+            line-height: 1;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+        .user-chip-remove:hover { background: #e9d5c8; color: #4d2f20; }
+        .user-select-icon {
+            position: absolute;
+            left: 17px;
+            top: 25px;
+            transform: translateY(-50%);
+            width: 22px;
+            height: 22px;
+            color: #72513e;
+            pointer-events: none;
+        }
+        .user-select-arrow {
+            position: absolute;
+            right: 17px;
+            top: 25px;
+            transform: translateY(-50%);
+            color: #705849;
+            font-size: 16px;
+            pointer-events: none;
+        }
+        .user-dropdown {
+            display: none;
+            margin-top: 7px;
+            border: 1px solid #e1d6cf;
+            border-radius: 11px;
+            background: #fff;
+            box-shadow: 0 12px 30px rgba(70, 45, 30, 0.12);
+            overflow: hidden;
+        }
+        .user-dropdown.active { display: block; }
+        .user-list { max-height: 300px; overflow-y: auto; }
+        .user-option {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 11px 14px;
+            cursor: pointer;
+            transition: background 0.15s ease;
+        }
+        .user-option:hover { background: #faf5f1; }
+        .user-option.selected { background: #f7eee8; }
+        .user-checkbox {
+            width: 19px;
+            height: 19px;
+            accent-color: #805035;
+            flex-shrink: 0;
+            cursor: pointer;
+        }
+        .user-avatar-small {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: #f0e2d8;
+            color: #75472e;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+        .user-option-info { flex: 1; min-width: 0; }
+        .user-option-name { display: block; color: #49372d; font-size: 14px; font-weight: 600; }
+        .user-option-email {
+            display: block;
+            margin-top: 2px;
+            color: #8d8179;
+            font-size: 12px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .user-dropdown-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 14px;
+            border-top: 1px solid #eee5df;
+            color: #786c64;
+            font-size: 12px;
+            background: #fffdfb;
+        }
+        .user-list::-webkit-scrollbar { width: 7px; }
+        .user-list::-webkit-scrollbar-track { background: #f8f4f1; }
+        .user-list::-webkit-scrollbar-thumb { background: #c7b1a2; border-radius: 10px; }
+
+        /* MODAL BUTTONS */
+        .room-modal-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 26px; }
+        .room-cancel-btn,
+        .room-create-btn {
+            height: 48px;
+            padding: 0 24px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s ease;
+        }
+        .room-cancel-btn { border: 1px solid #cdbeb4; background: #fff; color: #634a3b; }
+        .room-cancel-btn:hover { background: #f8f2ee; }
+        .room-create-btn {
+            border: none;
+            background: linear-gradient(90deg, #834521 0%, #b36d43 100%);
+            color: white;
+        }
+        .room-create-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 20px rgba(91, 57, 37, 0.18);
+        }
+        @media (max-width: 600px) {
+            .room-modal { padding: 25px 20px 22px; border-radius: 15px; }
+            .room-modal-title h2 { font-size: 24px; }
+            .room-modal-actions { flex-direction: column-reverse; }
+            .room-cancel-btn, .room-create-btn { width: 100%; }
+        }
+
+        /* ========================= STATUS ROWS ========================= */
+        .status-row td { text-align: center; color: #8d8179; font-size: 15px; height: 90px; }
+        .status-row.error td { color: #c62828; }
+        .user-list-empty { padding: 18px 14px; text-align: center; color: #8d8179; font-size: 13px; }
+        .room-create-btn:disabled { opacity: 0.6; cursor: wait; transform: none; }
+    
+
+        /* Room name opens the room page */
+        .room-link { color: inherit; text-decoration: none; font-weight: 600; }
+        .room-link:hover { color: #8b4a26; text-decoration: underline; }
+
+        /* ---------- TOAST MESSAGE ---------- */
+        .toast {
+            position: fixed;
+            left: 50%;
+            bottom: 28px;
+            z-index: 10001;
+            padding: 12px 20px;
+            border-radius: 10px;
+            background: #3d281f;
+            color: #fff;
+            font-size: 14px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            opacity: 0;
+            transform: translate(-50%, 20px);
+            pointer-events: none;
+            transition: 0.25s ease;
+        }
+        .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+
+        /* ========== PHONES: tables turn into cards, everything easy to tap (PRD: 360 px, 44 px) ========== */
+        @media (max-width: 700px) {
+            .table-wrapper { overflow: visible; }
+            .table-wrapper table { min-width: 0 !important; }
+            .table-wrapper thead { display: none; }
+            .table-wrapper table, .table-wrapper tbody, .table-wrapper tr, .table-wrapper td { display: block; width: 100%; }
+            .table-wrapper tbody tr {
+                position: relative;
+                margin-bottom: 12px;
+                padding: 12px 14px;
+                border: 1px solid #eee6e0;
+                border-radius: 14px;
+                background: #fff;
+            }
+            .table-wrapper tbody tr:hover { background: #fff; }
+            .table-wrapper td {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 12px;
+                height: auto;
+                min-height: 34px;
+                padding: 4px 0;
+                border: none;
+                font-size: 15px;
+            }
+            .table-wrapper td[data-label]::before {
+                content: attr(data-label);
+                color: #8d8179;
+                font-size: 13px;
+                font-weight: 600;
+            }
+            .table-wrapper td.cell-hide { display: none; }
+            .table-wrapper td.cell-main { padding-bottom: 8px; margin-bottom: 4px; border-bottom: 1px solid #f2ebe6; }
+            .table-wrapper td.cell-main::before { content: none; }
+            .table-wrapper td.cell-actions { justify-content: flex-end; padding-top: 8px; }
+            .table-wrapper td.cell-actions::before { content: none; }
+            .table-wrapper .status-row td { display: block; text-align: center; height: auto; padding: 24px 8px; }
+        }
+        @media (max-width: 700px) {
+            .room-link { display: inline-flex; align-items: center; min-height: 44px; font-size: 17px; }
+            .action-btn { width: 52px; height: 46px; }
+            .search-button { width: 52px; height: 48px; }
+            .create-room { height: 48px; }
+            .profile { min-height: 44px; }
+        }
+
+        /* =====================================================================
+           PHONES (≤ 700 px): app-style layout
+           - the sidebar becomes a bottom menu bar
+           - compact top bar with the portal name
+           - full-width content, no cards inside cards
+        ===================================================================== */
+        @media (max-width: 700px) {
+            html, body { background: #faf8f6; }
+            body { -webkit-tap-highlight-color: transparent; }
+
+            /* Bottom menu bar */
+            .sidebar {
+                top: auto;
+                bottom: 0;
+                left: 0;
+                width: 100% !important;
+                height: auto;
+                padding: 6px 10px calc(6px + env(safe-area-inset-bottom)) !important;
+                background: #3d281f;
+                box-shadow: 0 -6px 20px rgba(40, 24, 16, 0.18);
+                overflow: visible;
+            }
+            .sidebar::before, .sidebar::after, .logo { display: none !important; }
+            .nav { flex-direction: row; justify-content: space-around; gap: 4px; }
+            .nav-item {
+                flex: 1;
+                height: 54px !important;
+                padding: 0 !important;
+                flex-direction: column;
+                justify-content: center !important;
+                gap: 3px;
+                border-radius: 12px;
+                font-size: 11.5px;
+                font-weight: 600;
+                color: rgba(255, 255, 255, 0.7);
+            }
+            .nav-item span:last-child { display: block !important; }
+            .nav-item.active {
+                background: rgba(205, 166, 138, 0.28);
+                box-shadow: none;
+                color: #fff;
+            }
+            .nav-icon, .nav-icon svg { width: 22px; height: 22px; }
+
+            /* Page area */
+            .main {
+                width: 100% !important;
+                margin-left: 0 !important;
+                height: auto !important;
+                min-height: 100vh;
+                overflow: visible !important;
+                padding-bottom: calc(80px + env(safe-area-inset-bottom));
+            }
+
+            /* Compact top bar */
+            .topbar {
+                position: sticky;
+                top: 0;
+                z-index: 90;
+                height: 56px !important;
+                padding: 0 16px !important;
+                justify-content: space-between;
+                background: rgba(255, 255, 255, 0.94);
+                backdrop-filter: blur(10px);
+                -webkit-backdrop-filter: blur(10px);
+            }
+            .topbar::before {
+                content: "Admin Portal";
+                color: #4d2f20;
+                font-size: 18px;
+                font-weight: 700;
+                letter-spacing: -0.3px;
+            }
+            .notification { display: none; }
+            .profile { gap: 6px; }
+            .profile-avatar { width: 36px; height: 36px; font-size: 15px; }
+            .profile-name { display: none; }
+
+            .content { padding: 16px 16px 24px !important; }
+
+            /* Panels: lighter, less padding */
+            .panel, .rooms-card {
+                padding: 16px !important;
+                border-radius: 16px;
+            }
+            .panel-head { margin-bottom: 12px; }
+            .panel-head h2 { font-size: 19px; }
+            .panel-head p { font-size: 13px; }
+        }
+        /* Dashboard on phones */
+        @media (max-width: 700px) {
+            .welcome-section { margin-bottom: 14px; }
+            .welcome h1 { font-size: 25px !important; letter-spacing: -0.6px; margin-bottom: 4px; }
+            .welcome p { font-size: 14px !important; }
+
+            /* three small stat tiles in one row */
+            .stats-grid { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; gap: 8px; margin-bottom: 18px; }
+            .stat-card {
+                min-height: 0;
+                padding: 12px;
+                flex-direction: column;
+                gap: 8px;
+                border-radius: 14px;
+            }
+            .stat-card::after { display: none; }
+            .stat-icon { width: 34px; height: 34px; border-radius: 10px; }
+            .stat-icon svg { width: 18px; height: 18px; }
+            .stat-title { font-size: 12px; margin: 0; color: #7a6a60; }
+            .stat-number { font-size: 22px; margin: 2px 0 0; }
+
+            /* Rooms: no outer card, just a header and the room cards */
+            .rooms-card { background: none; border: none; box-shadow: none; padding: 0 !important; }
+            .rooms-header { flex-direction: row !important; align-items: center !important; padding: 0 0 12px; gap: 10px; }
+            .rooms-title-icon, .rooms-title p { display: none; }
+            .rooms-title h2 { font-size: 20px; margin: 0; }
+            .room-actions { width: auto !important; gap: 8px; }
+            .create-room { flex: none !important; height: 44px !important; padding: 0 14px; font-size: 14px; }
+            .create-room svg { width: 18px; height: 18px; }
+            .search-button { width: 44px !important; height: 44px !important; }
+
+            /* Room cards: name on top, chips below, actions top-right */
+            .table-wrapper tbody tr {
+                display: flex !important;
+                flex-wrap: wrap;
+                align-items: center;
+                gap: 6px;
+                padding: 12px 12px 14px !important;
+                border-radius: 16px !important;
+                box-shadow: 0 4px 14px rgba(78, 48, 33, 0.05);
+            }
+            .table-wrapper td { width: auto !important; min-height: 0 !important; padding: 0 !important; }
+            .table-wrapper td.cell-main {
+                flex: 1 1 100%;
+                margin: 0 0 4px !important;
+                padding: 0 104px 0 0 !important;
+                border: none !important;
+            }
+            .table-wrapper .room-icon { width: 38px; height: 38px; }
+            .table-wrapper .room-name { gap: 10px; }
+            .table-wrapper td[data-label] {
+                display: inline-flex !important;
+                gap: 5px !important;
+                padding: 5px 10px !important;
+                border-radius: 20px;
+                background: #f6efea;
+                color: #4d3326;
+                font-size: 12.5px !important;
+                font-weight: 700;
+            }
+            .table-wrapper td[data-label]::before { font-size: 12px !important; font-weight: 500 !important; }
+            .table-wrapper td.cell-actions {
+                position: absolute;
+                top: 10px;
+                right: 10px;
+                padding: 0 !important;
+            }
+            .table-wrapper .actions { gap: 6px; }
+            .table-wrapper .action-btn { width: 44px !important; height: 44px !important; border-radius: 12px; }
+        }
+        /* Back button lives in the top bar */
+        .topbar .back-link { margin: 0 auto 0 0 !important; font-size: 16px !important; min-height: 0 !important; }
+        .topbar.has-back::before { display: none !important; }
+    </style>
+</head>
+
+<body>
+
+    <!-- Reusable action icons -->
+    <svg width="0" height="0" style="position:absolute">
+        <defs>
+            <symbol id="icon-edit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 20h9"/>
+                <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4z"/>
+            </symbol>
+            <symbol id="icon-delete" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="3 6 5 6 21 6"/>
+                <path d="M19 6l-1 14H6L5 6"/>
+                <path d="M10 11v5"/>
+                <path d="M14 11v5"/>
+                <path d="M9 6V4h6v2"/>
+            </symbol>
+        </defs>
+    </svg>
+
+    <!-- ========================= SIDEBAR ========================= -->
+    <aside class="sidebar">
+        <div class="logo">
+            <div class="logo-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 5.5A2.5 2.5 0 0 1 5.5 3H11v16H5.5A2.5 2.5 0 0 0 3 21.5z"/>
+                    <path d="M21 5.5A2.5 2.5 0 0 0 18.5 3H13v16h5.5a2.5 2.5 0 0 1 2.5 2.5z"/>
+                </svg>
+            </div>
+            <div class="logo-text">Admin Portal</div>
+        </div>
+
+        <nav class="nav">
+            <a href="dashboard.html" class="nav-item active">
+                <div class="nav-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="m3 10 9-7 9 7"/>
+                        <path d="M5 9v11h14V9"/>
+                        <path d="M9 20v-6h6v6"/>
+                    </svg>
+                </div>
+                <span>Dashboard</span>
+            </a>
+            <a href="users.html" class="nav-item">
+                <div class="nav-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="9" cy="8" r="3"/>
+                        <circle cx="17" cy="9" r="2.5"/>
+                        <path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/>
+                        <path d="M15 14.5c3.2.2 5.5 2.5 5.5 5.5"/>
+                    </svg>
+                </div>
+                <span>Users</span>
+            </a>
+            <a href="settings.html" class="nav-item">
+                <div class="nav-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="3"/>
+                        <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-1.8 1.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V20h-2.6v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1-1.8-1.8.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H6v-2.6h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1L9 6.6l.1.1a1.7 1.7 0 0 0 1.9.3 1.7 1.7 0 0 0 1-1.5V5h2.6v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1 1.8 1.8-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.5 1h.1v2.6h-.1a1.7 1.7 0 0 0-1.1 1.4z"/>
+                    </svg>
+                </div>
+                <span>Settings</span>
+            </a>
+        </nav>
+    </aside>
+
+    <!-- ========================= MAIN ========================= -->
+    <main class="main">
+        <header class="topbar has-back">
+            <a href="login.html?role=admin" class="back-link" id="backToLogin">‹ Back</a>
+            <div class="notification">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/>
+                    <path d="M10 21h4"/>
+                </svg>
+            </div>
+            <div class="profile">
+                <div class="profile-avatar" id="profileAvatar">A</div>
+                <span class="profile-name" id="profileName">Admin</span>
+                <svg class="profile-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="m6 9 6 6 6-6"/>
+                </svg>
+            </div>
+        </header>
+
+        <section class="content">
+            <div class="welcome-section">
+                <div class="welcome">
+                    <h1 id="welcomeText">Welcome, Admin</h1>
+                    <p>Manage your rooms, users and images.</p>
+                </div>
+            </div>
+
+            <!-- STATISTICS (filled from the database) -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 7h6l2 2h10v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                            <path d="M3 7V5a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2"/>
+                        </svg>
+                    </div>
+                    <div class="stat-info">
+                        <div class="stat-title">Total Rooms</div>
+                        <div class="stat-number" id="stat-rooms"></div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="9" cy="8" r="3"/>
+                            <circle cx="17" cy="9" r="2.5"/>
+                            <path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/>
+                            <path d="M15 14.5c3.2.2 5.5 2.5 5.5 5.5"/>
+                        </svg>
+                    </div>
+                    <div class="stat-info">
+                        <div class="stat-title">Total Users</div>
+                        <div class="stat-number" id="stat-users"></div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="18" height="18" rx="2"/>
+                            <circle cx="8.5" cy="8.5" r="1.5"/>
+                            <path d="m21 15-5-5L5 21"/>
+                        </svg>
+                    </div>
+                    <div class="stat-info">
+                        <div class="stat-title">Total Images</div>
+                        <div class="stat-number" id="stat-images"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ROOMS -->
+            <div class="rooms-card">
+                <div class="rooms-header">
+                    <div class="rooms-title">
+                        <div class="rooms-title-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M3 7h6l2 2h10v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                                <path d="M3 7V5a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <h2>Rooms</h2>
+                            <p>Overview of all rooms with users and images.</p>
+                        </div>
+                    </div>
+                    <div class="room-actions">
+                        <button class="create-room" id="createRoomBtn" type="button">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                                <line x1="12" y1="5" x2="12" y2="19"/>
+                                <line x1="5" y1="12" x2="19" y2="12"/>
+                            </svg>
+                            Create Room
+                        </button>
+                        <button class="search-button" id="searchBtn" type="button" aria-label="Search rooms">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                                <circle cx="11" cy="11" r="7"/>
+                                <line x1="16.5" y1="16.5" x2="21" y2="21"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Room Name</th>
+                                <th>Users</th>
+                                <th>Subjects</th>
+                                <th>Images</th>
+                                <th>Created On</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="roomsBody">
+                            <tr class="status-row"><td colspan="8">Loading rooms...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- ========================= CREATE / EDIT ROOM MODAL ========================= -->
+    <div class="room-modal-overlay" id="roomModalOverlay">
+        <div class="room-modal">
+            <div class="room-modal-header">
+                <div class="room-modal-title">
+                    <h2 id="roomModalTitle">Create New Room</h2>
+                    <p id="roomModalSubtitle">Give the room a name. Members and subjects are added on the room page.</p>
+                </div>
+                <button class="room-modal-close" id="closeRoomModal" type="button" aria-label="Close">×</button>
+            </div>
+
+            <div class="room-field">
+                <label for="roomName">Room Name</label>
+                <input type="text" id="roomName" class="room-input" placeholder="e.g. Computer Science" autocomplete="off">
+            </div>
+
+
+            <div class="room-modal-actions">
+                <button type="button" class="room-cancel-btn" id="cancelRoomBtn">Cancel</button>
+                <button type="button" class="room-create-btn" id="submitRoomBtn">Create Room</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Short message that pops up at the bottom, e.g. "Room saved" -->
+    <div class="toast" id="toast"></div>
+
+        <!-- ========================= JAVASCRIPT ========================= -->
+    <script>
+        /* BACKEND CONNECTION: change this if your FastAPI server runs somewhere else */
+        const API_BASE = location.protocol === "file:" ? "http://127.0.0.1:8001"          // opened as a file on the Mac
+            : location.port === "5500" ? "http://" + location.hostname + ":8001"   // python3 -m http.server 5500
+            : location.origin;                                                    // served by the backend / online
+
+        /* ---------- JWT PROTECTION ---------- */
+        const token = localStorage.getItem("access_token");
+        if (!token) {
+            window.location.href = "login.html?role=admin";
+        }
+
+        function logout() {
+            localStorage.removeItem("access_token");
+            localStorage.removeItem("user_id");
+            localStorage.removeItem("user_name");
+            localStorage.removeItem("user_email");
+            localStorage.removeItem("role");
+            window.location.href = "login.html?role=admin";
+        }
+
+        /* Every request sends the login token. A 401 means it expired, so go back to login. */
+        async function api(path, options = {}) {
+            let response;
+            try {
+                const isUpload = options.body instanceof FormData;
+                response = await fetch(API_BASE + path, {
+                    ...options,
+                    headers: {
+                        // Uploads set their own Content-Type, so only add JSON for normal requests
+                        ...(isUpload ? {} : { "Content-Type": "application/json" }),
+                        "Authorization": `Bearer ${token}`,
+                        ...(options.headers || {})
+                    }
+                });
+            } catch (err) {
+                throw new Error(`Can't reach the server at ${API_BASE}. Is the backend running?`);
+            }
+
+            if (response.status === 401) {
+                alert("Your session has expired. Please log in again.");
+                logout();
+                throw new Error("Session expired");
+            }
+
+            const data = await response.json().catch(() => null);
+
+            if (!response.ok) {
+                let message = `Request failed (${response.status})`;
+                if (data && typeof data.detail === "string") message = data.detail;
+                else if (data && Array.isArray(data.detail)) message = data.detail.map(d => d.msg).join(", ");
+                throw new Error(message);
+            }
+            return data;
+        }
+
+        function escapeHTML(value) {
+            return String(value ?? "").replace(/[&<>"']/g, ch => ({
+                "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+            }[ch]));
+        }
+
+        function formatDate(iso) {
+            if (!iso) return "—";
+            const date = new Date(iso.endsWith("Z") ? iso : iso + "Z");
+            return date.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+        }
+
+        /* ---------- USER INFORMATION ---------- */
+        function showUser(name) {
+            document.getElementById("profileName").textContent = name;
+            document.getElementById("welcomeText").textContent = `Welcome, ${name}`;
+            document.getElementById("profileAvatar").textContent = name.charAt(0).toUpperCase();
+        }
+
+        showUser(localStorage.getItem("user_name") || "Admin");
+
+        async function loadProfile() {
+            try {
+                const me = await api("/admin/me");
+                localStorage.setItem("user_name", me.name);
+                localStorage.setItem("user_email", me.email);
+                showUser(me.name);
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        /* ---------- STATS ---------- */
+        async function loadStats() {
+            try {
+                const stats = await api("/admin/dashboard");
+                const set = (key, total) => {
+                    document.getElementById(`stat-${key}`).textContent = Number(total || 0).toLocaleString("en-IN");
+                };
+                set("rooms", stats.total_rooms);
+                set("users", stats.total_users);
+                set("images", stats.total_images);
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        /* ---------- ROOMS TABLE ---------- */
+        const roomsBody = document.getElementById("roomsBody");
+        let currentSearch = "";
+
+        const ROOM_ICONS = [
+            '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 19v2"/>',
+            '<circle cx="12" cy="12" r="8"/><path d="M12 7v10"/><path d="M8 10h8"/><path d="M8 14h8"/>',
+            '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/>',
+            '<path d="M4 20V8l8-5 8 5v12"/><path d="M9 20v-5h6v5"/><path d="M8 10h1"/><path d="M15 10h1"/>',
+            '<path d="m13 2-9 12h7l-1 8 9-12h-7z"/>',
+            '<ellipse cx="12" cy="5" rx="7" ry="3"/><path d="M5 5v6c0 1.7 3.1 3 7 3s7-1.3 7-3V5"/><path d="M5 11v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6"/>'
+        ];
+
+        function showTableMessage(message, isError = false) {
+            roomsBody.innerHTML = `<tr class="status-row${isError ? " error" : ""}"><td colspan="8">${escapeHTML(message)}</td></tr>`;
+        }
+
+        async function loadRooms() {
+            try {
+                const query = currentSearch ? `?search=${encodeURIComponent(currentSearch)}` : "";
+                const rooms = await api(`/admin/rooms${query}`);
+
+                if (rooms.length === 0) {
+                    showTableMessage(currentSearch
+                        ? `No rooms match "${currentSearch}".`
+                        : "No rooms yet. Click Create Room to add one.");
+                    return;
+                }
+
+                roomsBody.innerHTML = rooms.map((room, index) => `
+                    <tr data-id="${room.id}" data-name="${escapeHTML(room.name)}">
+                        <td class="cell-hide">${index + 1}</td>
+                        <td class="cell-main">
+                            <div class="room-name">
+                                <a class="room-link" href="room.html?id=${room.id}" title="Open room">${escapeHTML(room.name)}</a>
+                            </div>
+                        </td>
+                        <td data-label="Users">${room.user_count.toLocaleString("en-IN")}</td>
+                        <td data-label="Subjects">${(room.subject_count || 0).toLocaleString("en-IN")}</td>
+                        <td data-label="Images">${room.image_count.toLocaleString("en-IN")}</td>
+                        <td data-label="Created On">${formatDate(room.created_at)}</td>
+                        <td class="cell-actions">
+                            <div class="actions">
+                                <button class="action-btn edit-btn" type="button" aria-label="Manage room" title="Manage room: members, subjects, images"><svg><use href="#icon-edit"/></svg></button>
+                                <button class="action-btn delete" type="button" aria-label="Delete"><svg><use href="#icon-delete"/></svg></button>
+                            </div>
+                        </td>
+                    </tr>
+                `).join("");
+            } catch (err) {
+                console.error(err);
+                showTableMessage(err.message, true);
+            }
+        }
+
+        function refreshDashboard() {
+            loadStats();
+            loadRooms();
+        }
+
+
+        /* ---------- CREATE / EDIT ROOM MODAL (room name only) ---------- */
+        const roomModalOverlay = document.getElementById("roomModalOverlay");
+        const roomModalTitle = document.getElementById("roomModalTitle");
+        const roomModalSubtitle = document.getElementById("roomModalSubtitle");
+        const roomNameInput = document.getElementById("roomName");
+        const createRoomBtn = document.getElementById("createRoomBtn");
+        const closeRoomModal = document.getElementById("closeRoomModal");
+        const cancelRoomBtn = document.getElementById("cancelRoomBtn");
+        const submitRoomBtn = document.getElementById("submitRoomBtn");
+
+        let editingRoomId = null;          // null = creating a new room
+
+        let toastTimer = null;
+        function showToast(message) {
+            const toast = document.getElementById("toast");
+            toast.textContent = message;
+            toast.classList.add("show");
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => toast.classList.remove("show"), 3000);
+        }
+
+        function openRoomModal() {
+            roomModalOverlay.classList.add("active");
+            document.body.style.overflow = "hidden";
+            roomNameInput.focus();
+        }
+
+        function closeRoomModalFunction() {
+            roomModalOverlay.classList.remove("active");
+            document.body.style.overflow = "";
+        }
+
+        createRoomBtn.addEventListener("click", function () {
+            editingRoomId = null;
+            roomModalTitle.textContent = "Create New Room";
+            roomModalSubtitle.textContent = "Give the room a name. Members and subjects are added on the room page.";
+            submitRoomBtn.textContent = "Create Room";
+            roomNameInput.value = "";
+            openRoomModal();
+        });
+
+        closeRoomModal.addEventListener("click", closeRoomModalFunction);
+        cancelRoomBtn.addEventListener("click", closeRoomModalFunction);
+        roomModalOverlay.addEventListener("click", function (event) {
+            if (event.target === roomModalOverlay) closeRoomModalFunction();
+        });
+        document.addEventListener("keydown", function (event) {
+            if (event.key === "Escape" && roomModalOverlay.classList.contains("active")) closeRoomModalFunction();
+        });
+        roomNameInput.addEventListener("keydown", event => {
+            if (event.key === "Enter") submitRoomBtn.click();
+        });
+
+        submitRoomBtn.addEventListener("click", async function () {
+            const name = roomNameInput.value.trim();
+
+            if (!name) { alert("Please enter a room name."); roomNameInput.focus(); return; }
+
+            const isEdit = editingRoomId !== null;
+            submitRoomBtn.disabled = true;
+            submitRoomBtn.textContent = isEdit ? "Saving..." : "Creating...";
+
+            try {
+                // No user_ids sent: the room's members stay as they are
+                const room = await api(isEdit ? `/admin/rooms/${editingRoomId}` : "/admin/rooms", {
+                    method: isEdit ? "PUT" : "POST",
+                    body: JSON.stringify({ name })
+                });
+                if (!isEdit) {
+                    // New room: open its page to add members (left) and subjects (right)
+                    window.location.href = `room.html?id=${room.id}`;
+                    return;
+                }
+                closeRoomModalFunction();
+                refreshDashboard();
+                showToast("Room saved");
+            } catch (err) {
+                alert(err.message);
+            } finally {
+                submitRoomBtn.disabled = false;
+                submitRoomBtn.textContent = editingRoomId !== null ? "Save Changes" : "Create Room";
+            }
+        });
+
+
+        /* ---------- SEARCH ROOMS ---------- */
+        document.getElementById("searchBtn").addEventListener("click", function () {
+            const query = prompt("Search rooms by name (leave empty to show all):", currentSearch);
+            if (query === null) return;
+            currentSearch = query.trim();
+            loadRooms();
+        });
+
+        /* ---------- TABLE ACTIONS ---------- */
+        roomsBody.addEventListener("click", async function (event) {
+            const button = event.target.closest(".action-btn");
+            if (!button) return;
+
+            const row = button.closest("tr");
+            const roomId = row.dataset.id;
+            const roomName = row.dataset.name;
+
+            if (button.classList.contains("delete")) {
+                if (!confirm(`Delete the "${roomName}" room?\n\nIts images will be deleted too. This can't be undone.`)) return;
+                try {
+                    await api(`/admin/rooms/${roomId}`, { method: "DELETE" });
+                    refreshDashboard();
+                } catch (err) {
+                    alert(err.message);
+                }
+            } else if (button.classList.contains("edit-btn")) {
+                // ✎ = manage the room (members, subjects, images, rename)
+                window.location.href = `room.html?id=${roomId}`;
+            }
+        });
+
+        /* ---------- LOGOUT ---------- */
+        document.querySelector(".profile").addEventListener("click", function () {
+            if (confirm("Do you want to logout?")) logout();
+        });
+        document.getElementById("backToLogin").addEventListener("click", (event) => {
+            event.preventDefault();
+            if (currentSearch) {
+                // After a search, Back clears it and shows all rooms again
+                currentSearch = "";
+                loadRooms();
+                return;
+            }
+            logout();
+        });
+
+        /* ---------- START ---------- */
+        if (token) {
+            loadProfile();
+            refreshDashboard();
+        }
+    </script>
+</body>
+</html>
