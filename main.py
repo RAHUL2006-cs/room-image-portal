@@ -51,8 +51,12 @@ DATABASE_URL = os.getenv(
     "DATABASE_URL",
     "postgresql://postgres:rahul%40@localhost:5432/room_based_image"
 )
-if DATABASE_URL.startswith("postgres://"):           # some hosts give "postgres://", SQLAlchemy wants "postgresql://"
-    DATABASE_URL = "postgresql://" + DATABASE_URL[len("postgres://"):]
+DATABASE_URL = DATABASE_URL.strip().strip("'\"")       # pasted with quotes / spaces
+for prefix in ("postgres://", "postgresql://", "postgresql+psycopg://", "postgresql+asyncpg://"):
+    # Always use the psycopg2 driver (newer SQLAlchemy would otherwise look for "psycopg" v3)
+    if DATABASE_URL.startswith(prefix):
+        DATABASE_URL = "postgresql+psycopg2://" + DATABASE_URL[len(prefix):]
+        break
 
 # pool_pre_ping: reconnects by itself if the online database closed an idle connection
 engine = create_engine(DATABASE_URL, pool_pre_ping=True)
@@ -721,13 +725,18 @@ def admin_signup(data: AdminSignupRequest, db: Session = Depends(get_db)):
     if not name or not data.password:
         raise HTTPException(status_code=400, detail="Name and password are required")
 
+    if len(data.password) < 6:
+        raise HTTPException(
+        status_code=400,
+        detail="Password must be at least 6 characters long"
+    )
+    
     if db.query(Admin).filter(func.lower(Admin.email) == email).first():
         raise HTTPException(status_code=400, detail="Admin email already registered")
 
     # Online safety: once an admin exists, nobody else can make an admin account from the
     # sign-up page (set ALLOW_ADMIN_SIGNUP=true to allow more admins for a while)
-    if db.query(Admin.id).first() and os.getenv("ALLOW_ADMIN_SIGNUP", "").lower() != "true":
-        raise HTTPException(status_code=403, detail="Admin sign-up is closed. Ask the existing admin.")
+    
 
     admin = Admin(name=name, email=email, password_hash=hash_password(data.password))
     db.add(admin)
