@@ -3308,8 +3308,7 @@
                 <li class="nb-item${isNew ? " nb-new" : ""}" data-link="${esc(n.link || "")}">
                     <span class="nb-dot"></span>
                     <div>
-                        <p class="nb-title">${esc(n.title || n.message)}</p>
-                        ${n.title && n.message ? `<p class="nb-msg">${esc(n.message)}</p>` : ""}
+                        <p class="nb-title">${esc(n.message || n.title)}</p>
                         <span class="nb-time">${timeAgo(toTime(n))}</span>
                     </div>
                 </li>`;
@@ -3343,7 +3342,7 @@
 
     function popUp(arr) {
         const n = arr[0];
-        toastMsg(arr.length === 1 ? `${n.title}${n.message ? ": " + n.message : ""}` : `${arr.length} new notifications`);
+        toastMsg(arr.length === 1 ? (n.message || n.title) : `${arr.length} new notifications`);
     }
 
     /* Load from the server */
