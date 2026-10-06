@@ -2161,7 +2161,7 @@
                 room.users = fresh.users;
                 members = fresh.users;
                 renderMembers();
-                showToast(`${nf(job.created + (job.existing_added || 0))} added to ${room.name}`);
+                if (!job.created) showToast(`${nf(job.existing_added || 0)} added to ${room.name}`);   // new users: the bell shows it
             } catch (err) {
                 document.getElementById("roomJobText").textContent = err.message;
                 alert(err.message);
@@ -2409,7 +2409,7 @@
                 subjects.push({ id: subject.id, title: subject.title, image_count: 0, cover: "" });
                 showSubjectInput(false);
                 renderSubjectCards();
-                showToast(`Subject "${subject.title}" added`);
+                // the bell shows this one
             } catch (err) {
                 alert(err.message);
             } finally {
@@ -2446,7 +2446,7 @@
                 allItems = allItems.filter(item => item.subjectId !== id);
                 room.images = room.images.filter(img => img.subject_id !== id);
                 renderSubjectCards();
-                showToast(`Subject "${subject.title}" deleted`);
+                // the bell shows this one
                 return true;
             } catch (err) {
                 alert(err.message);
