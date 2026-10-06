@@ -1462,9 +1462,14 @@
             .nb-panel { display: none; position: absolute; right: 0; top: calc(100% + 12px); width: 360px; background: #fff; border: 1px solid #eee6e0; border-radius: 14px; box-shadow: 0 14px 36px rgba(65,42,28,.16); overflow: hidden; z-index: 200; text-align: left; font-family: Arial, Helvetica, sans-serif; }
             .nb-panel.open { display: block; animation: nbIn .18s ease; }
             @keyframes nbIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
-            .nb-head { padding: 14px 16px; border-bottom: 1px solid #eee6e0; font-size: 15px; color: #2d211c; }
+            .nb-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid #eee6e0; font-size: 15px; color: #2d211c; }
+            .nb-clear { border: none; background: none; color: #8b4a26; font-size: 13px; font-weight: 700; cursor: pointer; padding: 2px 4px; font-family: inherit; }
+            .nb-clear:hover { text-decoration: underline; }
+            .nb-clear[hidden] { display: none; }
+            .nb-del { position: absolute; top: 8px; right: 8px; width: 26px; height: 26px; border: none; border-radius: 7px; background: transparent; color: #a08c80; font-size: 18px; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+            .nb-del:hover { background: #f1e6df; color: #4d2f20; }
             .nb-list { list-style: none; margin: 0; padding: 0; max-height: 380px; overflow-y: auto; }
-            .nb-item { display: flex; gap: 12px; padding: 12px 16px; border-bottom: 1px solid #f2ebe6; }
+            .nb-item { position: relative; display: flex; gap: 12px; padding: 12px 42px 12px 16px; border-bottom: 1px solid #f2ebe6; }
             .nb-item:last-child { border-bottom: none; }
             .nb-item[data-link]:not([data-link=""]) { cursor: pointer; }
             .nb-item:hover { background: #fcfaf8; }
@@ -1523,9 +1528,10 @@
 
     const panel = document.createElement("div");
     panel.className = "nb-panel";
-    panel.innerHTML = `<div class="nb-head"><strong>Notifications</strong></div><ul class="nb-list"></ul>`;
+    panel.innerHTML = `<div class="nb-head"><strong>Notifications</strong><button type="button" class="nb-clear" hidden>Clear all</button></div><ul class="nb-list"></ul>`;
     wrap.appendChild(panel);
     const list = panel.querySelector(".nb-list");
+    const clearAllBtn = panel.querySelector(".nb-clear");
 
     /* Pop-up message at the bottom of the screen */
     let toastEl = null, toastTimer = null;
@@ -1569,6 +1575,7 @@
         bell.title = enabled ? "Notifications ON (click to turn off)" : "Notifications OFF (click to turn on)";
         bell.setAttribute("aria-label", bell.title);
 
+        clearAllBtn.hidden = !items.length;
         if (!items.length) {
             list.innerHTML = `<li class="nb-empty">No notifications yet</li>`;
             return;
@@ -1576,11 +1583,11 @@
         list.innerHTML = items.map(n => {
             const isNew = !n.read || justSeen.has(n.id);
             return `
-                <li class="nb-item${isNew ? " nb-new" : ""}" data-link="${esc(n.link || "")}">
+                <li class="nb-item${isNew ? " nb-new" : ""}" data-id="${n.id}" data-link="${esc(n.link || "")}">
+                    <button type="button" class="nb-del" title="Clear" aria-label="Clear notification">×</button>
                     <span class="nb-dot"></span>
                     <div>
-                        <p class="nb-title">${esc(n.title || n.message)}</p>
-                        ${n.title && n.message ? `<p class="nb-msg">${esc(n.message)}</p>` : ""}
+                        <p class="nb-title">${esc(n.message || n.title)}</p>
                         <span class="nb-time">${timeAgo(toTime(n))}</span>
                     </div>
                 </li>`;
@@ -1614,7 +1621,7 @@
 
     function popUp(arr) {
         const n = arr[0];
-        toastMsg(arr.length === 1 ? `${n.title}${n.message ? ": " + n.message : ""}` : `${arr.length} new notifications`);
+        toastMsg(arr.length === 1 ? (n.message || n.title) : `${arr.length} new notifications`);
     }
 
     /* Load from the server */
@@ -1688,9 +1695,30 @@
     arrow.addEventListener("click", e => { e.stopPropagation(); setOpen(!isOpen()); });
     document.addEventListener("click", e => { if (isOpen() && !wrap.contains(e.target)) setOpen(false); });
     document.addEventListener("keydown", e => { if (e.key === "Escape" && isOpen()) setOpen(false); });
+    function removeOnServer(path) {
+        fetch(BASE + path, { method: "DELETE", headers: { "Authorization": `Bearer ${TOKEN}` } }).catch(() => {});
+    }
+
     list.addEventListener("click", e => {
+        e.stopPropagation();                         // keep the list open
         const item = e.target.closest(".nb-item");
-        if (item && item.dataset.link) window.location.href = item.dataset.link;
+        if (!item) return;
+        if (e.target.closest(".nb-del")) {           // x = clear this one
+            const id = Number(item.dataset.id);
+            items = items.filter(n => n.id !== id);
+            render();
+            removeOnServer(`/admin/notifications/${id}`);
+            return;
+        }
+        if (item.dataset.link) window.location.href = item.dataset.link;
+    });
+
+    clearAllBtn.addEventListener("click", e => {    // Clear all
+        e.stopPropagation();
+        if (!confirm("Clear all notifications?")) return;
+        items = [];
+        render();
+        removeOnServer("/admin/notifications");
     });
 
     /* Keep ON/OFF the same everywhere */

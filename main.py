@@ -200,6 +200,7 @@ class Notification(Base):
     message = Column(Text, nullable=True)
     link = Column(String, nullable=True)            # page to open when clicked, e.g. "room.html?id=3"
     read = Column(Integer, default=0, nullable=False)   # 0 = unread, 1 = read
+    read_at = Column(DateTime, nullable=True)           # when it was seen (it disappears 15 min later)
     created_at = Column(DateTime, default=datetime.utcnow, index=True)
 
 
@@ -263,6 +264,17 @@ def add_job_room_column():
 
 
 add_job_room_column()
+
+
+# Notifications get a "read_at" time (seen notifications disappear 15 minutes later)
+def add_notification_read_at():
+    existing = {col["name"] for col in inspect(engine).get_columns("notifications")}
+    if "read_at" not in existing:
+        with engine.begin() as conn:
+            conn.execute(text("ALTER TABLE notifications ADD COLUMN read_at TIMESTAMP"))
+
+
+add_notification_read_at()
 
 
 # Images uploaded before subjects existed belong to no subject.
@@ -848,6 +860,9 @@ def get_dashboard(
 # NOTIFICATIONS (the bell on the dashboard)
 # =========================================================
 
+NOTIFICATION_KEEP_MINUTES = 15     # a seen notification disappears this long after it was seen
+
+
 class NotificationIdsRequest(BaseModel):
     ids: List[int] = []
 
@@ -859,6 +874,17 @@ def list_notifications(
     db: Session = Depends(get_db)
 ):
     limit = max(1, min(limit, 100))
+
+    # Seen notifications disappear NOTIFICATION_KEEP_MINUTES after they were seen
+    now = datetime.utcnow()
+    db.query(Notification).filter(Notification.read == 1, Notification.read_at.is_(None)) \
+        .update({Notification.read_at: now}, synchronize_session=False)      # seen before this change
+    db.query(Notification).filter(
+        Notification.read == 1,
+        Notification.read_at < now - timedelta(minutes=NOTIFICATION_KEEP_MINUTES)
+    ).delete(synchronize_session=False)
+    db.commit()
+
     rows = (
         db.query(Notification)
         .order_by(Notification.created_at.desc(), Notification.id.desc())
@@ -886,10 +912,33 @@ def mark_notifications_read(
 ):
     ids = list(set(data.ids))
     if ids:
-        db.query(Notification).filter(Notification.id.in_(ids)) \
-            .update({Notification.read: 1}, synchronize_session=False)
+        db.query(Notification).filter(Notification.id.in_(ids), Notification.read == 0) \
+            .update({Notification.read: 1, Notification.read_at: datetime.utcnow()}, synchronize_session=False)
         db.commit()
     return {"marked": len(ids)}
+
+
+@app.delete("/admin/notifications/{notification_id}")
+def delete_notification(
+    notification_id: int,
+    current_admin: int = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    """The x on one notification: removes it."""
+    db.query(Notification).filter(Notification.id == notification_id).delete(synchronize_session=False)
+    db.commit()
+    return {"deleted": 1}
+
+
+@app.delete("/admin/notifications")
+def clear_notifications(
+    current_admin: int = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    """Clear all: removes every notification."""
+    deleted = db.query(Notification).delete(synchronize_session=False)
+    db.commit()
+    return {"deleted": deleted}
 
 
 # =========================================================
