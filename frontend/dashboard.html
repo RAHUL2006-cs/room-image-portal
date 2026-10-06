@@ -1482,10 +1482,10 @@
     const ICON_OFF = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/><path d="M4 4l16 16"/></svg>`;
     const LAST_SEEN_KEY = "notif_last_seen";
 
-    // Same setting your old toggle used, so ON/OFF keeps working
+    // Same saved setting as before
     let enabled = localStorage.getItem("notifications_enabled") !== "false";
     let items = [];
-    let justSeen = new Set();     // stay highlighted while the panel is open
+    let justSeen = new Set();     // stay highlighted while the list is open
     let firstLoad = true;
 
     /* Build the bell + dropdown */
@@ -1494,8 +1494,6 @@
     bell.parentNode.insertBefore(wrap, bell);
     wrap.appendChild(bell);
     bell.setAttribute("role", "button");
-    bell.setAttribute("aria-haspopup", "true");
-    bell.setAttribute("aria-expanded", "false");
     bell.tabIndex = 0;
     bell.innerHTML = `<span class="nb-icon"></span><span class="nb-badge" hidden></span>`;
     const icon = bell.querySelector(".nb-icon");
@@ -1504,16 +1502,10 @@
     const panel = document.createElement("div");
     panel.className = "nb-panel";
     panel.innerHTML = `
-        <div class="nb-head">
-            <strong>Notifications</strong>
-            <label class="nb-switch" title="Turn notification alerts on or off">
-                <input type="checkbox" class="nb-toggle"> Alerts
-            </label>
-        </div>
+        <div class="nb-head"><strong>Notifications</strong></div>
         <ul class="nb-list"></ul>`;
     wrap.appendChild(panel);
     const list = panel.querySelector(".nb-list");
-    const toggle = panel.querySelector(".nb-toggle");
 
     /* Helpers */
     const toTime = n => {
@@ -1521,7 +1513,6 @@
         return new Date(/Z|[+-]\d\d:?\d\d$/.test(s) ? s : s + "Z").getTime();
     };
     const lastSeen = () => Number(localStorage.getItem(LAST_SEEN_KEY) || 0);
-    // Uses the server's "read" field if it sends one, otherwise "newer than the last time I looked"
     const isUnread = n => typeof n.read === "boolean" ? !n.read : toTime(n) > lastSeen();
     const isOpen = () => panel.classList.contains("open");
 
@@ -1540,9 +1531,8 @@
         icon.innerHTML = enabled ? ICON_ON : ICON_OFF;
         badge.hidden = !enabled || unread === 0;
         badge.textContent = unread > 9 ? "9+" : unread;
-        bell.title = !enabled ? "Notifications muted" : unread ? `${unread} new notification${unread > 1 ? "s" : ""}` : "Notifications";
+        bell.title = enabled ? "Notifications ON (click to turn off)" : "Notifications OFF (click to turn on)";
         bell.setAttribute("aria-label", bell.title);
-        toggle.checked = enabled;
 
         if (!items.length) {
             list.innerHTML = `<li class="nb-empty">No notifications yet</li>`;
@@ -1562,7 +1552,7 @@
         }).join("");
     }
 
-    /* Seeing is enough: opening the panel marks everything as read */
+    /* Seeing is enough: showing the list marks them as read */
     function markSeen() {
         const ids = items.filter(n => !n.read).map(n => n.id);
         if (!ids.length) return;
@@ -1581,7 +1571,7 @@
         bell.classList.add("nb-ring");
     }
 
-    /* Load from the server (also picks up anything missed while away) */
+    /* Load from the server (keeps collecting even while OFF) */
     async function load() {
         try {
             const res = await fetch(API_BASE + "/admin/notifications", {
@@ -1609,32 +1599,36 @@
         render();
     }
 
-    /* Open / close */
+    /* Show / hide the list */
     function setOpen(open) {
-        if (open === isOpen()) return;
         panel.classList.toggle("open", open);
         bell.classList.toggle("nb-active", open);
-        bell.setAttribute("aria-expanded", String(open));
         if (open) markSeen(); else justSeen.clear();
         render();
     }
 
-    bell.addEventListener("click", e => { e.stopPropagation(); setOpen(!isOpen()); });
+    /* Click the bell: ON -> OFF (cross), OFF -> ON (and show what you missed) */
+    function toggleBell() {
+        enabled = !enabled;
+        localStorage.setItem("notifications_enabled", String(enabled));
+        if (!enabled) {
+            setOpen(false);
+        } else {
+            const missed = items.some(n => !n.read);
+            setOpen(missed);          // open the list only if something was missed
+        }
+    }
+
+    bell.addEventListener("click", e => { e.stopPropagation(); toggleBell(); });
     bell.addEventListener("keydown", e => {
-        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setOpen(!isOpen()); }
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleBell(); }
     });
-    document.addEventListener("click", e => { if (!wrap.contains(e.target)) setOpen(false); });
-    document.addEventListener("keydown", e => { if (e.key === "Escape") setOpen(false); });
+    document.addEventListener("click", e => { if (isOpen() && !wrap.contains(e.target)) setOpen(false); });
+    document.addEventListener("keydown", e => { if (e.key === "Escape" && isOpen()) setOpen(false); });
 
     list.addEventListener("click", e => {
         const item = e.target.closest(".nb-item");
         if (item && item.dataset.link) window.location.href = item.dataset.link;
-    });
-
-    toggle.addEventListener("change", () => {
-        enabled = toggle.checked;
-        localStorage.setItem("notifications_enabled", String(enabled));
-        render();
     });
 
     /* Check for new ones every 30 seconds, and when you come back to the tab */
