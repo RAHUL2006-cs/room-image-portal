@@ -1660,6 +1660,10 @@ def create_subject(
 
     subject = Subject(room_id=room_id, name=title)
     db.add(subject)
+    room_name = db.query(Room.name).filter(Room.id == room_id).scalar()
+    notify(db, "New subject created",
+           f"{title} was created in {room_name} room",
+           f"room.html?id={room_id}#subjects")
     db.commit()
     db.refresh(subject)
     return subject_to_dict(db, subject)
