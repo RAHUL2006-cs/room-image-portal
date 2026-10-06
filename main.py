@@ -1158,6 +1158,11 @@ def create_room(
     for uid in user_ids or []:
         db.add(RoomUser(room_id=room.id, user_id=uid))
 
+    for uid in user_ids or []:
+        db.add(RoomUser(room_id=room.id, user_id=uid))
+
+    notify(db, "New room created", f"Room '{name}' was created", f"room.html?id={room.id}")
+
     db.commit()
     db.refresh(room)
 
