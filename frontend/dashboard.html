@@ -1715,7 +1715,6 @@
 
     clearAllBtn.addEventListener("click", e => {    // Clear all
         e.stopPropagation();
-        if (!confirm("Clear all notifications?")) return;
         items = [];
         render();
         removeOnServer("/admin/notifications");
