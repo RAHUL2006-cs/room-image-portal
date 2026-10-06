@@ -899,6 +899,59 @@
         /* Back button lives in the top bar */
         .topbar .back-link { margin: 0 auto 0 0 !important; font-size: 16px !important; min-height: 0 !important; }
         .topbar.has-back::before { display: none !important; }
+/* ========================= NOTIFICATIONS ========================= */
+.nb-wrap { position: relative; }
+.notification { position: relative; border-radius: 50%; transition: background .15s; }
+.notification:hover, .notification.nb-active { background: #f4ebe5; }
+.notification:focus-visible { outline: 2px solid #674837; outline-offset: 2px; }
+.nb-icon { display: flex; }
+.nb-badge {
+    position: absolute; top: 2px; right: 0;
+    min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px;
+    background: #d9482b; color: #fff; font-size: 11px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    border: 2px solid #fff;
+}
+.nb-badge[hidden] { display: none; }
+.notification.nb-ring svg { animation: nbRing .6s ease; transform-origin: 50% 4px; }
+@keyframes nbRing {
+    0%, 100% { transform: rotate(0); }
+    20% { transform: rotate(14deg); }
+    40% { transform: rotate(-12deg); }
+    60% { transform: rotate(8deg); }
+    80% { transform: rotate(-4deg); }
+}
+.nb-panel {
+    display: none; position: absolute; right: -8px; top: calc(100% + 12px);
+    width: 360px; background: #fff; border: 1px solid #eee6e0; border-radius: 14px;
+    box-shadow: 0 14px 36px rgba(65, 42, 28, .16); overflow: hidden; z-index: 200;
+}
+.nb-panel.open { display: block; animation: roomModalIn .18s ease; }
+.nb-head {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 14px 16px; border-bottom: 1px solid #eee6e0; font-size: 15px; color: #2d211c;
+}
+.nb-switch { display: flex; align-items: center; gap: 6px; font-size: 13px; color: #786c64; cursor: pointer; }
+.nb-switch input { accent-color: #805035; width: 16px; height: 16px; cursor: pointer; }
+.nb-list { list-style: none; max-height: 380px; overflow-y: auto; }
+.nb-item { display: flex; gap: 12px; padding: 12px 16px; border-bottom: 1px solid #f2ebe6; }
+.nb-item:last-child { border-bottom: none; }
+.nb-item[data-link]:not([data-link=""]) { cursor: pointer; }
+.nb-item:hover { background: #fcfaf8; }
+.nb-item.nb-new { background: #f7eee8; }
+.nb-dot { width: 8px; height: 8px; margin-top: 6px; border-radius: 50%; flex-shrink: 0; }
+.nb-item.nb-new .nb-dot { background: #805035; }
+.nb-title { font-size: 14px; color: #30251f; margin-bottom: 2px; }
+.nb-item.nb-new .nb-title { font-weight: 600; }
+.nb-msg { font-size: 13px; color: #66554c; margin-bottom: 3px; }
+.nb-time { font-size: 12px; color: #8d8179; }
+.nb-empty { padding: 34px 16px; text-align: center; color: #8d8179; font-size: 14px; }
+
+/* Phones: show the bell and make the dropdown fit the screen */
+@media (max-width: 700px) {
+    .notification { display: flex; }
+    .nb-panel { position: fixed; top: 64px; left: 12px; right: 12px; width: auto; }
+}
     </style>
 </head>
 
@@ -1419,6 +1472,176 @@
             loadProfile();
             refreshDashboard();
         }
-    </script>
+        
+/* ---------- NOTIFICATIONS (bell) ---------- */
+(function () {
+    const bell = document.querySelector(".notification");
+    if (!bell || !token) return;
+
+    const ICON_ON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg>`;
+    const ICON_OFF = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/><path d="M4 4l16 16"/></svg>`;
+    const LAST_SEEN_KEY = "notif_last_seen";
+
+    // Same setting your old toggle used, so ON/OFF keeps working
+    let enabled = localStorage.getItem("notifications_enabled") !== "false";
+    let items = [];
+    let justSeen = new Set();     // stay highlighted while the panel is open
+    let firstLoad = true;
+
+    /* Build the bell + dropdown */
+    const wrap = document.createElement("div");
+    wrap.className = "nb-wrap";
+    bell.parentNode.insertBefore(wrap, bell);
+    wrap.appendChild(bell);
+    bell.setAttribute("role", "button");
+    bell.setAttribute("aria-haspopup", "true");
+    bell.setAttribute("aria-expanded", "false");
+    bell.tabIndex = 0;
+    bell.innerHTML = `<span class="nb-icon"></span><span class="nb-badge" hidden></span>`;
+    const icon = bell.querySelector(".nb-icon");
+    const badge = bell.querySelector(".nb-badge");
+
+    const panel = document.createElement("div");
+    panel.className = "nb-panel";
+    panel.innerHTML = `
+        <div class="nb-head">
+            <strong>Notifications</strong>
+            <label class="nb-switch" title="Turn notification alerts on or off">
+                <input type="checkbox" class="nb-toggle"> Alerts
+            </label>
+        </div>
+        <ul class="nb-list"></ul>`;
+    wrap.appendChild(panel);
+    const list = panel.querySelector(".nb-list");
+    const toggle = panel.querySelector(".nb-toggle");
+
+    /* Helpers */
+    const toTime = n => {
+        const s = String(n.created_at || "");
+        return new Date(/Z|[+-]\d\d:?\d\d$/.test(s) ? s : s + "Z").getTime();
+    };
+    const lastSeen = () => Number(localStorage.getItem(LAST_SEEN_KEY) || 0);
+    // Uses the server's "read" field if it sends one, otherwise "newer than the last time I looked"
+    const isUnread = n => typeof n.read === "boolean" ? !n.read : toTime(n) > lastSeen();
+    const isOpen = () => panel.classList.contains("open");
+
+    function timeAgo(t) {
+        const s = Math.round((Date.now() - t) / 1000);
+        if (s < 60) return "Just now";
+        if (s < 3600) return `${Math.floor(s / 60)} min ago`;
+        if (s < 86400) return `${Math.floor(s / 3600)} hr ago`;
+        if (s < 172800) return "Yesterday";
+        return new Date(t).toLocaleDateString("en-GB", { day: "2-digit", month: "short" });
+    }
+
+    /* Draw */
+    function render() {
+        const unread = items.filter(n => !n.read).length;
+        icon.innerHTML = enabled ? ICON_ON : ICON_OFF;
+        badge.hidden = !enabled || unread === 0;
+        badge.textContent = unread > 9 ? "9+" : unread;
+        bell.title = !enabled ? "Notifications muted" : unread ? `${unread} new notification${unread > 1 ? "s" : ""}` : "Notifications";
+        bell.setAttribute("aria-label", bell.title);
+        toggle.checked = enabled;
+
+        if (!items.length) {
+            list.innerHTML = `<li class="nb-empty">No notifications yet</li>`;
+            return;
+        }
+        list.innerHTML = items.map(n => {
+            const isNew = !n.read || justSeen.has(n.id);
+            return `
+                <li class="nb-item${isNew ? " nb-new" : ""}" data-link="${escapeHTML(n.link || "")}">
+                    <span class="nb-dot"></span>
+                    <div>
+                        <p class="nb-title">${escapeHTML(n.title || n.message)}</p>
+                        ${n.title && n.message ? `<p class="nb-msg">${escapeHTML(n.message)}</p>` : ""}
+                        <span class="nb-time">${timeAgo(toTime(n))}</span>
+                    </div>
+                </li>`;
+        }).join("");
+    }
+
+    /* Seeing is enough: opening the panel marks everything as read */
+    function markSeen() {
+        const ids = items.filter(n => !n.read).map(n => n.id);
+        if (!ids.length) return;
+        items.forEach(n => { if (!n.read) { n.read = true; justSeen.add(n.id); } });
+        localStorage.setItem(LAST_SEEN_KEY, String(Math.max(lastSeen(), ...items.map(toTime))));
+        fetch(API_BASE + "/admin/notifications/mark-read", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+            body: JSON.stringify({ ids })
+        }).catch(() => {});
+    }
+
+    function ring() {
+        bell.classList.remove("nb-ring");
+        void bell.offsetWidth;
+        bell.classList.add("nb-ring");
+    }
+
+    /* Load from the server (also picks up anything missed while away) */
+    async function load() {
+        try {
+            const res = await fetch(API_BASE + "/admin/notifications", {
+                headers: { "Authorization": `Bearer ${token}` }
+            });
+            if (res.status === 401) { logout(); return; }
+            if (!res.ok) throw new Error(`status ${res.status}`);
+            const data = await res.json();
+            const incoming = Array.isArray(data) ? data : (data.notifications || []);
+
+            const known = new Set(items.map(n => n.id));
+            const readHere = new Set(items.filter(n => n.read).map(n => n.id));
+            const arrived = incoming.filter(n => !known.has(n.id) && isUnread(n));
+
+            items = incoming
+                .map(n => ({ ...n, read: readHere.has(n.id) || !isUnread(n) }))
+                .sort((a, b) => toTime(b) - toTime(a));
+
+            if (isOpen()) markSeen();
+            else if (!firstLoad && arrived.length && enabled) ring();
+        } catch (err) {
+            console.warn("Notifications not loaded:", err.message);
+        }
+        firstLoad = false;
+        render();
+    }
+
+    /* Open / close */
+    function setOpen(open) {
+        if (open === isOpen()) return;
+        panel.classList.toggle("open", open);
+        bell.classList.toggle("nb-active", open);
+        bell.setAttribute("aria-expanded", String(open));
+        if (open) markSeen(); else justSeen.clear();
+        render();
+    }
+
+    bell.addEventListener("click", e => { e.stopPropagation(); setOpen(!isOpen()); });
+    bell.addEventListener("keydown", e => {
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setOpen(!isOpen()); }
+    });
+    document.addEventListener("click", e => { if (!wrap.contains(e.target)) setOpen(false); });
+    document.addEventListener("keydown", e => { if (e.key === "Escape") setOpen(false); });
+
+    list.addEventListener("click", e => {
+        const item = e.target.closest(".nb-item");
+        if (item && item.dataset.link) window.location.href = item.dataset.link;
+    });
+
+    toggle.addEventListener("change", () => {
+        enabled = toggle.checked;
+        localStorage.setItem("notifications_enabled", String(enabled));
+        render();
+    });
+
+    /* Check for new ones every 30 seconds, and when you come back to the tab */
+    load();
+    setInterval(load, 30000);
+    document.addEventListener("visibilitychange", () => { if (!document.hidden) load(); });
+})();
+</script>
 </body>
 </html>
