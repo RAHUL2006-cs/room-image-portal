@@ -3425,6 +3425,21 @@
     arrow.addEventListener("click", e => { e.stopPropagation(); setOpen(!isOpen()); });
     document.addEventListener("click", e => { if (isOpen() && !wrap.contains(e.target)) setOpen(false); });
     document.addEventListener("keydown", e => { if (e.key === "Escape" && isOpen()) setOpen(false); });
+    /* Check right away after this page creates / deletes something, instead of waiting for the next 15-second check */
+    const realFetch = window.fetch.bind(window);
+    window.fetch = async (...args) => {
+        const res = await realFetch(...args);
+        try {
+            const req = args[0], opts = args[1] || {};
+            const url = String(req && req.url ? req.url : req);
+            const method = String(opts.method || (req && req.method) || "GET").toUpperCase();
+            if (method !== "GET" && url.includes("/admin/") && !url.includes("/admin/notifications")) {
+                setTimeout(() => load(false), 300);
+            }
+        } catch (e) { /* never break the page's own request */ }
+        return res;
+    };
+
     function removeOnServer(path) {
         fetch(BASE + path, { method: "DELETE", headers: { "Authorization": `Bearer ${TOKEN}` } }).catch(() => {});
     }
