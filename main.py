@@ -191,6 +191,22 @@ class Setting(Base):
     value = Column(Text, nullable=True)
 
 
+class Notification(Base):
+    """Bell notifications shown on the admin dashboard."""
+    __tablename__ = "notifications"
+
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String, nullable=False)
+    message = Column(Text, nullable=True)
+    link = Column(String, nullable=True)            # page to open when clicked, e.g. "room.html?id=3"
+    read = Column(Integer, default=0, nullable=False)   # 0 = unread, 1 = read
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+
+
+def notify(db: Session, title: str, message: str = None, link: str = None):
+    """Adds a bell notification. The route's own db.commit() saves it."""
+    db.add(Notification(title=title, message=message, link=link))
+
 Base.metadata.create_all(bind=engine)
 
 
@@ -827,6 +843,53 @@ def get_dashboard(
         "total_subjects": total(Subject),
         "total_images": total(Image),
     }
+
+# =========================================================
+# NOTIFICATIONS (the bell on the dashboard)
+# =========================================================
+
+class NotificationIdsRequest(BaseModel):
+    ids: List[int] = []
+
+
+@app.get("/admin/notifications")
+def list_notifications(
+    limit: int = 50,
+    current_admin: int = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    limit = max(1, min(limit, 100))
+    rows = (
+        db.query(Notification)
+        .order_by(Notification.created_at.desc(), Notification.id.desc())
+        .limit(limit)
+        .all()
+    )
+    return [
+        {
+            "id": n.id,
+            "title": n.title,
+            "message": n.message or "",
+            "link": n.link or "",
+            "read": bool(n.read),
+            "created_at": n.created_at.isoformat() if n.created_at else None,
+        }
+        for n in rows
+    ]
+
+
+@app.post("/admin/notifications/mark-read")
+def mark_notifications_read(
+    data: NotificationIdsRequest,
+    current_admin: int = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    ids = list(set(data.ids))
+    if ids:
+        db.query(Notification).filter(Notification.id.in_(ids)) \
+            .update({Notification.read: 1}, synchronize_session=False)
+        db.commit()
+    return {"marked": len(ids)}
 
 
 # =========================================================

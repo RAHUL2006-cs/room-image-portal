@@ -1480,13 +1480,14 @@
 
     const ICON_ON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg>`;
     const ICON_OFF = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/><path d="M4 4l16 16"/></svg>`;
-    const LAST_SEEN_KEY = "notif_last_seen";
+    const LAST_SEEN_KEY = "notif_last_seen";     // no mouse/keyboard for 2 minutes = away
+    const CHECK_EVERY_MS = 15000;       // ask the server every 15 seconds
 
-    // Same saved setting as before
     let enabled = localStorage.getItem("notifications_enabled") !== "false";
     let items = [];
-    let justSeen = new Set();     // stay highlighted while the list is open
+    let justSeen = new Set();
     let firstLoad = true;
+    let backAt = 0;                     // when you last came back to the screen
 
     /* Build the bell + dropdown */
     const wrap = document.createElement("div");
@@ -1515,6 +1516,8 @@
     const lastSeen = () => Number(localStorage.getItem(LAST_SEEN_KEY) || 0);
     const isUnread = n => typeof n.read === "boolean" ? !n.read : toTime(n) > lastSeen();
     const isOpen = () => panel.classList.contains("open");
+    // At the screen = this tab is visible AND you used the mouse/keyboard recently
+    const isPresent = () => !document.hidden;
 
     function timeAgo(t) {
         const s = Math.round((Date.now() - t) / 1000);
@@ -1552,17 +1555,23 @@
         }).join("");
     }
 
-    /* Seeing is enough: showing the list marks them as read */
-    function markSeen() {
-        const ids = items.filter(n => !n.read).map(n => n.id);
+    /* Mark notifications as read (here and on the server) */
+    function markRead(ids, highlight) {
         if (!ids.length) return;
-        items.forEach(n => { if (!n.read) { n.read = true; justSeen.add(n.id); } });
-        localStorage.setItem(LAST_SEEN_KEY, String(Math.max(lastSeen(), ...items.map(toTime))));
+        const set = new Set(ids);
+        items.forEach(n => {
+            if (set.has(n.id) && !n.read) { n.read = true; if (highlight) justSeen.add(n.id); }
+        });
         fetch(API_BASE + "/admin/notifications/mark-read", {
             method: "POST",
             headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
             body: JSON.stringify({ ids })
         }).catch(() => {});
+    }
+
+    function markAllSeen() {
+        markRead(items.filter(n => !n.read).map(n => n.id), true);
+        if (items.length) localStorage.setItem(LAST_SEEN_KEY, String(Math.max(lastSeen(), ...items.map(toTime))));
     }
 
     function ring() {
@@ -1571,8 +1580,17 @@
         bell.classList.add("nb-ring");
     }
 
-    /* Load from the server (keeps collecting even while OFF) */
-    async function load() {
+    /* Pop-up message at the bottom while you're at the screen */
+    function popUp(arrived) {
+        if (typeof showToast !== "function") return;
+        const n = arrived[0];
+        showToast(arrived.length === 1
+            ? `${n.title}${n.message ? ": " + n.message : ""}`
+            : `${arrived.length} new notifications`);
+    }
+
+    /* Load from the server */
+    async function load(returning) {
         try {
             const res = await fetch(API_BASE + "/admin/notifications", {
                 headers: { "Authorization": `Bearer ${token}` }
@@ -1590,8 +1608,19 @@
                 .map(n => ({ ...n, read: readHere.has(n.id) || !isUnread(n) }))
                 .sort((a, b) => toTime(b) - toTime(a));
 
-            if (isOpen()) markSeen();
-            else if (!firstLoad && arrived.length && enabled) ring();
+            const justCameBack = returning || firstLoad || Date.now() - backAt < 5000;
+
+            if (isOpen()) {
+                markAllSeen();
+            } else if (enabled && arrived.length && isPresent() && !justCameBack) {
+                // You're here: show it now, don't add it to the count
+                popUp(arrived);
+                markRead(arrived.map(n => n.id), false);
+            } else if (enabled && justCameBack && items.some(n => !n.read)) {
+                // You were away: keep them stored, show the count and ring
+                ring();
+            }
+            // If you're away (or the bell is OFF), they simply stay unread and counted
         } catch (err) {
             console.warn("Notifications not loaded:", err.message);
         }
@@ -1603,7 +1632,7 @@
     function setOpen(open) {
         panel.classList.toggle("open", open);
         bell.classList.toggle("nb-active", open);
-        if (open) markSeen(); else justSeen.clear();
+        if (open) markAllSeen(); else justSeen.clear();
         render();
     }
 
@@ -1611,12 +1640,8 @@
     function toggleBell() {
         enabled = !enabled;
         localStorage.setItem("notifications_enabled", String(enabled));
-        if (!enabled) {
-            setOpen(false);
-        } else {
-            const missed = items.some(n => !n.read);
-            setOpen(missed);          // open the list only if something was missed
-        }
+        if (!enabled) setOpen(false);
+        else setOpen(items.some(n => !n.read));
     }
 
     bell.addEventListener("click", e => { e.stopPropagation(); toggleBell(); });
@@ -1631,11 +1656,23 @@
         if (item && item.dataset.link) window.location.href = item.dataset.link;
     });
 
-    /* Check for new ones every 30 seconds, and when you come back to the tab */
-    load();
-    setInterval(load, 30000);
-    document.addEventListener("visibilitychange", () => { if (!document.hidden) load(); });
+        /* Notice when the screen comes back on (laptop woke up, unlocked, or you returned to this tab) */
+    function cameBack() {
+        backAt = Date.now();
+        load(true);
+    }
+    document.addEventListener("visibilitychange", () => { if (!document.hidden) cameBack(); });
+
+    /* Start, then check every 15 seconds.
+       If a check runs much later than expected, the laptop was asleep / screen off,
+       so anything that arrived meanwhile is treated as missed (stored and counted). */
+    load(true);
+    let lastTick = Date.now();
+    setInterval(() => {
+        const now = Date.now();
+        const wasAsleep = now - lastTick > CHECK_EVERY_MS * 2;
+        lastTick = now;
+        if (wasAsleep) cameBack();
+        else load(false);
+    }, CHECK_EVERY_MS);
 })();
-</script>
-</body>
-</html>
