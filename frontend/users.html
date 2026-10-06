@@ -1937,7 +1937,7 @@
                 newEmail.value = "";
                 newPassword.value = defaultPassword;    // back to the default for the next user
                 newEmail.focus();          // college stays, handy when adding many from one college
-                showToast(`${user.email} created`);
+                // the bell shows this one
                 reloadUsers();
             } catch (err) {
                 alert(err.message);
@@ -2044,9 +2044,11 @@
                     job = await api(`/admin/jobs/${job.id}`);
                     showJob(job);
                 }
-                showToast(job.existing_added
-                    ? `${fmt(job.created)} created · ${fmt(job.existing_added)} existing added to ${job.room_name}`
-                    : `${fmt(job.created)} users created`);
+                if (!job.created) {        // when users were created, the bell shows the message
+                    showToast(job.existing_added
+                        ? `${fmt(job.existing_added)} existing added to ${job.room_name}`
+                        : "No users created");
+                }
                 reloadUsers();
             } catch (err) {
                 jobText.textContent = err.message;
@@ -2170,7 +2172,7 @@
                 const result = await api("/admin/users/delete", { method: "POST", body: JSON.stringify(body) });
                 selectedUserIds.clear();
                 allSelected = false;
-                showToast(`${fmt(result.deleted)} ${result.deleted === 1 ? "user" : "users"} deleted`);
+                // the bell shows this one
                 reloadUsers();
                 loadRoomsForBulk();
             } catch (err) {
@@ -2234,7 +2236,7 @@
                 loadedUsers = loadedUsers.filter(u => u.id !== id);
                 totalUsers--;
                 renderUsers();
-                showToast(`${user.email} deleted`);
+                // the bell shows this one
             } catch (err) {
                 alert(err.message);
                 button.disabled = false;

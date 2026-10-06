@@ -211,24 +211,25 @@ def notify(db: Session, title: str, message: str = None, link: str = None):
 Base.metadata.create_all(bind=engine)
 
 
-def notify_users_created(db: Session, count: int):
-    """'User was created.' for one user, 'Users were created.' for more.
-    If an unseen user notification is still waiting, it is merged into one 'Users were created.'"""
+def notify_users(db: Session, count: int, action: str = "created"):
+    """'User was created.' / 'Users were created.' (same for 'deleted').
+    If an unseen notification of the same kind is still waiting, it is merged into one 'Users were ...'"""
     if count < 1:
         return
+    kind = action.capitalize()                       # "Created" / "Deleted"
+    titles = [f"User {kind}", f"Users {kind}"]
     waiting = (db.query(Notification)
-                 .filter(Notification.read == 0,
-                         Notification.title.in_(["User Created", "Users Created"]))
+                 .filter(Notification.read == 0, Notification.title.in_(titles))
                  .order_by(Notification.created_at.desc())
                  .first())
     if waiting:
-        waiting.title = "Users Created"
-        waiting.message = "Users were created."
+        waiting.title = f"Users {kind}"
+        waiting.message = f"Users were {action}."
         waiting.created_at = datetime.utcnow()
     elif count == 1:
-        notify(db, "User Created", "User was created.", "users.html")
+        notify(db, f"User {kind}", f"User was {action}.", "users.html")
     else:
-        notify(db, "Users Created", "Users were created.", "users.html")
+        notify(db, f"Users {kind}", f"Users were {action}.", "users.html")
 
 
 # The images table may already exist from before, without the new columns.
@@ -2096,7 +2097,7 @@ def create_user(
 
     user = User(name=name_from_email(email), email=email, college=college, password_hash=hash_password(password))
     db.add(user)
-    notify_users_created(db, 1)
+    notify_users(db, 1, "created")
     db.commit()
     db.refresh(user)
     return user_to_dict(user)
@@ -2113,6 +2114,7 @@ def delete_user(
         raise HTTPException(status_code=404, detail="User not found")
     db.query(RoomUser).filter(RoomUser.user_id == user_id).delete(synchronize_session=False)
     db.delete(user)
+    notify_users(db, 1, "deleted")
     db.commit()
     return {"message": f"{user.email} deleted"}
 
@@ -2146,6 +2148,7 @@ def delete_many_users(
         chunk = ids[start:start + BATCH_SIZE]
         db.query(RoomUser).filter(RoomUser.user_id.in_(chunk)).delete(synchronize_session=False)
         deleted += db.query(User).filter(User.id.in_(chunk)).delete(synchronize_session=False)
+    notify_users(db, deleted, "deleted")
     db.commit()
     return {"deleted": deleted}
 
@@ -2281,7 +2284,7 @@ def run_user_import(job_id: int, rows: List[dict], room_id: Optional[int]):
             writer.writerows(sorted(errors))
             job.error_report = out.getvalue()
         job.status = "done"
-        notify_users_created(db, job.succeeded or 0)
+        notify_users(db, job.succeeded or 0, "created")
         db.commit()
     except Exception as exc:
         db.rollback()
