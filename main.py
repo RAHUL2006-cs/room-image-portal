@@ -1162,7 +1162,7 @@ def create_room(
         db.add(RoomUser(room_id=room.id, user_id=uid))
 
     notify(db, "New room created", f"Room '{name}' was created", f"room.html?id={room.id}")
-
+    db.commit()
     db.commit()
     db.refresh(room)
 
