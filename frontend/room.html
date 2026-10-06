@@ -3151,5 +3151,296 @@
                 });
         }
     </script>
+
+<!-- ========================= NOTIFICATION BELL (same block on every page) ========================= -->
+<script>
+(function () {
+    const bell = document.querySelector(".notification");
+    const TOKEN = localStorage.getItem("access_token");
+    if (!bell || !TOKEN) return;
+
+    const BASE = typeof API_BASE !== "undefined" ? API_BASE
+        : location.protocol === "file:" ? "http://127.0.0.1:8001"
+        : location.port === "5500" ? "http://" + location.hostname + ":8001"
+        : location.origin;
+    const esc = v => String(v ?? "").replace(/[&<>"']/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
+    const doLogout = () => {
+        if (typeof logout === "function") return logout();
+        localStorage.removeItem("access_token");
+        location.href = "login.html?role=admin";
+    };
+
+    /* Styles: added once, so the bell looks the same on every page */
+    if (!document.getElementById("nb-styles")) {
+        const st = document.createElement("style");
+        st.id = "nb-styles";
+        st.textContent = `
+            .nb-wrap { position: relative; }
+            .notification { position: relative; width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #553a2c; cursor: pointer; transition: background .15s; }
+            .notification:hover, .notification.nb-active { background: #f4ebe5; }
+            .notification svg { width: 24px; height: 24px; }
+            .nb-icon { display: flex; }
+            .nb-badge { position: absolute; top: 2px; right: 0; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: #d9482b; color: #fff; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; border: 2px solid #fff; font-family: Arial, sans-serif; }
+            .nb-badge[hidden] { display: none; }
+            .notification.nb-ring svg { animation: nbRing .6s ease; transform-origin: 50% 4px; }
+            @keyframes nbRing { 0%,100% { transform: rotate(0); } 20% { transform: rotate(14deg); } 40% { transform: rotate(-12deg); } 60% { transform: rotate(8deg); } 80% { transform: rotate(-4deg); } }
+            .nb-panel { display: none; position: absolute; right: -8px; top: calc(100% + 12px); width: 360px; background: #fff; border: 1px solid #eee6e0; border-radius: 14px; box-shadow: 0 14px 36px rgba(65,42,28,.16); overflow: hidden; z-index: 200; text-align: left; font-family: Arial, Helvetica, sans-serif; }
+            .nb-panel.open { display: block; animation: nbIn .18s ease; }
+            @keyframes nbIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+            .nb-head { padding: 14px 16px; border-bottom: 1px solid #eee6e0; font-size: 15px; color: #2d211c; }
+            .nb-list { list-style: none; margin: 0; padding: 0; max-height: 380px; overflow-y: auto; }
+            .nb-item { display: flex; gap: 12px; padding: 12px 16px; border-bottom: 1px solid #f2ebe6; }
+            .nb-item:last-child { border-bottom: none; }
+            .nb-item[data-link]:not([data-link=""]) { cursor: pointer; }
+            .nb-item:hover { background: #fcfaf8; }
+            .nb-item.nb-new { background: #f7eee8; }
+            .nb-dot { width: 8px; height: 8px; margin-top: 6px; border-radius: 50%; flex-shrink: 0; }
+            .nb-item.nb-new .nb-dot { background: #805035; }
+            .nb-title { font-size: 14px; color: #30251f; margin: 0 0 2px; }
+            .nb-item.nb-new .nb-title { font-weight: 600; }
+            .nb-msg { font-size: 13px; color: #66554c; margin: 0 0 3px; }
+            .nb-time { font-size: 12px; color: #8d8179; }
+            .nb-empty { padding: 34px 16px; text-align: center; color: #8d8179; font-size: 14px; }
+            .nb-toast { position: fixed; left: 50%; bottom: 28px; z-index: 10002; max-width: calc(100vw - 32px); padding: 12px 20px; border-radius: 10px; background: #3d281f; color: #fff; font-size: 14px; font-family: Arial, Helvetica, sans-serif; box-shadow: 0 10px 30px rgba(0,0,0,.2); opacity: 0; transform: translate(-50%, 20px); pointer-events: none; transition: .25s ease; }
+            .nb-toast.show { opacity: 1; transform: translate(-50%, 0); }
+            @media (max-width: 700px) {
+                .notification { display: flex !important; }
+                .nb-panel { position: fixed; top: 64px; left: 12px; right: 12px; width: auto; }
+                .nb-toast { bottom: 96px; }
+            }`;
+        document.head.appendChild(st);
+    }
+
+    const ICON_ON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg>`;
+    const ICON_OFF = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/><path d="M4 4l16 16"/></svg>`;
+    const ENABLED_KEY = "notifications_enabled";   // ON/OFF, shared by every page
+    const LAST_SEEN_KEY = "notif_last_seen";
+    const LAST_CHECK_KEY = "notif_last_check";     // last time you were on any portal page
+    const CHECK_EVERY_MS = 15000;                  // ask the server every 15 seconds
+
+    const readEnabled = () => localStorage.getItem(ENABLED_KEY) !== "false";
+    let enabled = readEnabled();
+    let items = [];
+    let justSeen = new Set();
+    let firstLoad = true;
+    let backAt = 0;
+
+    /* Build the bell + dropdown */
+    const wrap = document.createElement("div");
+    wrap.className = "nb-wrap";
+    bell.parentNode.insertBefore(wrap, bell);
+    wrap.appendChild(bell);
+    bell.setAttribute("role", "button");
+    bell.tabIndex = 0;
+    bell.innerHTML = `<span class="nb-icon"></span><span class="nb-badge" hidden></span>`;
+    const icon = bell.querySelector(".nb-icon");
+    const badge = bell.querySelector(".nb-badge");
+
+    const panel = document.createElement("div");
+    panel.className = "nb-panel";
+    panel.innerHTML = `<div class="nb-head"><strong>Notifications</strong></div><ul class="nb-list"></ul>`;
+    wrap.appendChild(panel);
+    const list = panel.querySelector(".nb-list");
+
+    /* Pop-up message at the bottom of the screen */
+    let toastEl = null, toastTimer = null;
+    function toastMsg(msg) {
+        if (!toastEl) {
+            toastEl = document.createElement("div");
+            toastEl.className = "nb-toast";
+            document.body.appendChild(toastEl);
+        }
+        toastEl.textContent = msg;
+        toastEl.classList.add("show");
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => toastEl.classList.remove("show"), 4000);
+    }
+
+    /* Helpers */
+    const toTime = n => {
+        const s = String(n.created_at || "");
+        return new Date(/Z|[+-]\d\d:?\d\d$/.test(s) ? s : s + "Z").getTime();
+    };
+    const lastSeen = () => Number(localStorage.getItem(LAST_SEEN_KEY) || 0);
+    const isUnread = n => typeof n.read === "boolean" ? !n.read : toTime(n) > lastSeen();
+    const isOpen = () => panel.classList.contains("open");
+    const isPresent = () => !document.hidden;      // screen on and this page showing
+
+    function timeAgo(t) {
+        const s = Math.round((Date.now() - t) / 1000);
+        if (s < 60) return "Just now";
+        if (s < 3600) return `${Math.floor(s / 60)} min ago`;
+        if (s < 86400) return `${Math.floor(s / 3600)} hr ago`;
+        if (s < 172800) return "Yesterday";
+        return new Date(t).toLocaleDateString("en-GB", { day: "2-digit", month: "short" });
+    }
+
+    /* Draw */
+    function render() {
+        const unread = items.filter(n => !n.read).length;
+        icon.innerHTML = enabled ? ICON_ON : ICON_OFF;
+        badge.hidden = !enabled || unread === 0;
+        badge.textContent = unread > 9 ? "9+" : unread;
+        bell.title = enabled ? "Notifications ON (click to turn off)" : "Notifications OFF (click to turn on)";
+        bell.setAttribute("aria-label", bell.title);
+
+        if (!items.length) {
+            list.innerHTML = `<li class="nb-empty">No notifications yet</li>`;
+            return;
+        }
+        list.innerHTML = items.map(n => {
+            const isNew = !n.read || justSeen.has(n.id);
+            return `
+                <li class="nb-item${isNew ? " nb-new" : ""}" data-link="${esc(n.link || "")}">
+                    <span class="nb-dot"></span>
+                    <div>
+                        <p class="nb-title">${esc(n.title || n.message)}</p>
+                        ${n.title && n.message ? `<p class="nb-msg">${esc(n.message)}</p>` : ""}
+                        <span class="nb-time">${timeAgo(toTime(n))}</span>
+                    </div>
+                </li>`;
+        }).join("");
+    }
+
+    /* Mark as read (here and on the server) */
+    function markRead(ids, highlight) {
+        if (!ids.length) return;
+        const set = new Set(ids);
+        items.forEach(n => {
+            if (set.has(n.id) && !n.read) { n.read = true; if (highlight) justSeen.add(n.id); }
+        });
+        fetch(BASE + "/admin/notifications/mark-read", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "Authorization": `Bearer ${TOKEN}` },
+            body: JSON.stringify({ ids })
+        }).catch(() => {});
+    }
+
+    function markAllSeen() {
+        markRead(items.filter(n => !n.read).map(n => n.id), true);
+        if (items.length) localStorage.setItem(LAST_SEEN_KEY, String(Math.max(lastSeen(), ...items.map(toTime))));
+    }
+
+    function ring() {
+        bell.classList.remove("nb-ring");
+        void bell.offsetWidth;
+        bell.classList.add("nb-ring");
+    }
+
+    function popUp(arr) {
+        const n = arr[0];
+        toastMsg(arr.length === 1 ? `${n.title}${n.message ? ": " + n.message : ""}` : `${arr.length} new notifications`);
+    }
+
+    /* Load from the server */
+    async function load(returning) {
+        enabled = readEnabled();       // always use the latest ON/OFF setting
+        try {
+            const res = await fetch(BASE + "/admin/notifications", {
+                headers: { "Authorization": `Bearer ${TOKEN}` }
+            });
+            if (res.status === 401) { doLogout(); return; }
+            if (!res.ok) throw new Error(`status ${res.status}`);
+            const data = await res.json();
+            const incoming = Array.isArray(data) ? data : (data.notifications || []);
+
+            const known = new Set(items.map(n => n.id));
+            const readHere = new Set(items.filter(n => n.read).map(n => n.id));
+            const arrived = incoming.filter(n => !known.has(n.id) && isUnread(n));
+
+            items = incoming
+                .map(n => ({ ...n, read: readHere.has(n.id) || !isUnread(n) }))
+                .sort((a, b) => toTime(b) - toTime(a));
+
+            // Were you on a portal page a moment ago? (e.g. you just moved from the dashboard to a room)
+            const prevCheck = Number(localStorage.getItem(LAST_CHECK_KEY) || 0);
+            const wasOnSite = Date.now() - prevCheck < 60000;
+            if (isPresent()) localStorage.setItem(LAST_CHECK_KEY, String(Date.now()));
+
+            if (isOpen()) {
+                markAllSeen();
+            } else if (firstLoad && wasOnSite && enabled && isPresent()) {
+                // Page just opened but you were already here: pop up what just happened
+                const fresh = items.filter(n => !n.read && toTime(n) > prevCheck - 30000);
+                if (fresh.length) { popUp(fresh); markRead(fresh.map(n => n.id), false); }
+                if (items.some(n => !n.read)) ring();
+            } else {
+                const justCameBack = returning || firstLoad || Date.now() - backAt < 5000;
+                if (enabled && arrived.length && isPresent() && !justCameBack) {
+                    popUp(arrived);                               // you're here: show it now
+                    markRead(arrived.map(n => n.id), false);
+                } else if (enabled && justCameBack && items.some(n => !n.read)) {
+                    ring();                                       // you were away: keep them counted
+                }
+            }
+        } catch (err) {
+            console.warn("Notifications not loaded:", err.message);
+        }
+        firstLoad = false;
+        render();
+    }
+
+    /* Show / hide the list */
+    function setOpen(open) {
+        panel.classList.toggle("open", open);
+        bell.classList.toggle("nb-active", open);
+        if (open) markAllSeen(); else justSeen.clear();
+        render();
+    }
+
+    /* Click the bell: ON -> OFF (cross), OFF -> ON (and show what you missed) */
+    function toggleBell() {
+        enabled = !readEnabled();
+        localStorage.setItem(ENABLED_KEY, String(enabled));
+        if (!enabled) setOpen(false);
+        else setOpen(items.some(n => !n.read));
+    }
+
+    bell.addEventListener("click", e => { e.stopPropagation(); toggleBell(); });
+    bell.addEventListener("keydown", e => {
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleBell(); }
+    });
+    document.addEventListener("click", e => { if (isOpen() && !wrap.contains(e.target)) setOpen(false); });
+    document.addEventListener("keydown", e => { if (e.key === "Escape" && isOpen()) setOpen(false); });
+    list.addEventListener("click", e => {
+        const item = e.target.closest(".nb-item");
+        if (item && item.dataset.link) window.location.href = item.dataset.link;
+    });
+
+    /* Keep ON/OFF the same everywhere */
+    window.addEventListener("storage", e => {                  // changed in another tab
+        if (e.key === ENABLED_KEY) { enabled = readEnabled(); if (!enabled) setOpen(false); render(); }
+    });
+    window.addEventListener("pageshow", () => {                // page shown again with the Back button
+        enabled = readEnabled();
+        render();
+    });
+
+    /* Screen comes back on / you return to this tab */
+    function cameBack() {
+        backAt = Date.now();
+        load(true);
+    }
+    document.addEventListener("visibilitychange", () => { if (!document.hidden) cameBack(); });
+
+    /* Leaving a page for another portal page still counts as "here" */
+    window.addEventListener("pagehide", () => {
+        if (!document.hidden) localStorage.setItem(LAST_CHECK_KEY, String(Date.now()));
+    });
+
+    /* Start, then check every 15 seconds (a late check means the laptop was asleep) */
+    render();
+    load(true);
+    let lastTick = Date.now();
+    setInterval(() => {
+        const now = Date.now();
+        const wasAsleep = now - lastTick > CHECK_EVERY_MS * 2;
+        lastTick = now;
+        if (wasAsleep) cameBack();
+        else load(false);
+    }, CHECK_EVERY_MS);
+})();
+</script>
+
 </body>
 </html>
