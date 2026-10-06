@@ -1158,11 +1158,7 @@ def create_room(
     for uid in user_ids or []:
         db.add(RoomUser(room_id=room.id, user_id=uid))
 
-    for uid in user_ids or []:
-        db.add(RoomUser(room_id=room.id, user_id=uid))
-
-    notify(db, "New room created", f"Room '{name}' was created", f"room.html?id={room.id}")
-    db.commit()
+    notify(db, "Room Created", f'Room "{name}" was created.', f"room.html?id={room.id}")
     db.commit()
     db.refresh(room)
 
@@ -1220,11 +1216,10 @@ def delete_room(
     for (file_path,) in db.query(Image.file_path).filter(Image.room_id == room_id).all():
         delete_image_file(file_path)
     db.query(Image).filter(Image.room_id == room_id).delete(synchronize_session=False)
-    subjects_deleted = db.query(Subject).filter(Subject.room_id == room_id).delete(synchronize_session=False)
+    db.query(Subject).filter(Subject.room_id == room_id).delete(synchronize_session=False)
     db.query(RoomUser).filter(RoomUser.room_id == room_id).delete(synchronize_session=False)
     db.delete(room)
-    extra = f" with {subjects_deleted} subject{'s' if subjects_deleted != 1 else ''}" if subjects_deleted else ""
-    notify(db, "Room deleted", f"'{room.name}' room was deleted{extra}")
+    notify(db, "Room Deleted", f'Room "{room.name}" was deleted.')
     db.commit()
 
     return {"message": f"Room '{room.name}' deleted"}
@@ -1662,9 +1657,8 @@ def create_subject(
 
     subject = Subject(room_id=room_id, name=title)
     db.add(subject)
-    room_name = db.query(Room.name).filter(Room.id == room_id).scalar()
-    notify(db, "New subject created",
-           f"'{title}' was created in '{room_name}' room",
+    notify(db, "Subject Created",
+           f'Subject "{title}" was created.',
            f"room.html?id={room_id}#subjects")
     db.commit()
     db.refresh(subject)
@@ -1699,11 +1693,10 @@ def delete_subject(
     for (file_path,) in db.query(Image.file_path).filter(Image.subject_id == subject_id).all():
         delete_image_file(file_path)
     db.query(Image).filter(Image.subject_id == subject_id).delete(synchronize_session=False)
-    room_name = db.query(Room.name).filter(Room.id == subject.room_id).scalar()
     room_id = subject.room_id
     db.delete(subject)
-    notify(db, "Subject deleted",
-           f"'{subject.name}' was deleted from '{room_name}' room",
+    notify(db, "Subject Deleted",
+           f'Subject "{subject.name}" was deleted.',
            f"room.html?id={room_id}#subjects")
     db.commit()
     return {"message": f"Subject '{subject.name}' deleted"}
