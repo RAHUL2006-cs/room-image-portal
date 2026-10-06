@@ -3175,7 +3175,11 @@
         const st = document.createElement("style");
         st.id = "nb-styles";
         st.textContent = `
-            .nb-wrap { position: relative; }
+            .nb-wrap { position: relative; display: flex; align-items: center; gap: 2px; }
+            .nb-arrow { width: 26px; height: 38px; border: none; border-radius: 8px; background: transparent; color: #553a2c; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; transition: background .15s; }
+            .nb-arrow:hover, .nb-arrow.nb-active { background: #f4ebe5; }
+            .nb-arrow svg { width: 16px; height: 16px; transition: transform .15s; }
+            .nb-arrow.nb-active svg { transform: rotate(180deg); }
             .notification { position: relative; width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #553a2c; cursor: pointer; transition: background .15s; }
             .notification:hover, .notification.nb-active { background: #f4ebe5; }
             .notification svg { width: 24px; height: 24px; }
@@ -3184,7 +3188,7 @@
             .nb-badge[hidden] { display: none; }
             .notification.nb-ring svg { animation: nbRing .6s ease; transform-origin: 50% 4px; }
             @keyframes nbRing { 0%,100% { transform: rotate(0); } 20% { transform: rotate(14deg); } 40% { transform: rotate(-12deg); } 60% { transform: rotate(8deg); } 80% { transform: rotate(-4deg); } }
-            .nb-panel { display: none; position: absolute; right: -8px; top: calc(100% + 12px); width: 360px; background: #fff; border: 1px solid #eee6e0; border-radius: 14px; box-shadow: 0 14px 36px rgba(65,42,28,.16); overflow: hidden; z-index: 200; text-align: left; font-family: Arial, Helvetica, sans-serif; }
+            .nb-panel { display: none; position: absolute; right: 0; top: calc(100% + 12px); width: 360px; background: #fff; border: 1px solid #eee6e0; border-radius: 14px; box-shadow: 0 14px 36px rgba(65,42,28,.16); overflow: hidden; z-index: 200; text-align: left; font-family: Arial, Helvetica, sans-serif; }
             .nb-panel.open { display: block; animation: nbIn .18s ease; }
             @keyframes nbIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
             .nb-head { padding: 14px 16px; border-bottom: 1px solid #eee6e0; font-size: 15px; color: #2d211c; }
@@ -3235,6 +3239,16 @@
     bell.innerHTML = `<span class="nb-icon"></span><span class="nb-badge" hidden></span>`;
     const icon = bell.querySelector(".nb-icon");
     const badge = bell.querySelector(".nb-badge");
+
+    /* Small arrow next to the bell: opens the list of stored notifications */
+    const arrow = document.createElement("button");
+    arrow.type = "button";
+    arrow.className = "nb-arrow";
+    arrow.title = "Show notifications";
+    arrow.setAttribute("aria-label", "Show notifications");
+    arrow.setAttribute("aria-expanded", "false");
+    arrow.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>`;
+    wrap.appendChild(arrow);
 
     const panel = document.createElement("div");
     panel.className = "nb-panel";
@@ -3383,23 +3397,24 @@
     /* Show / hide the list */
     function setOpen(open) {
         panel.classList.toggle("open", open);
-        bell.classList.toggle("nb-active", open);
+        arrow.classList.toggle("nb-active", open);
+        arrow.setAttribute("aria-expanded", String(open));
         if (open) markAllSeen(); else justSeen.clear();
         render();
     }
 
-    /* Click the bell: ON -> OFF (cross), OFF -> ON (and show what you missed) */
+    /* Click the bell: ON <-> OFF (cross). The list is opened with the arrow. */
     function toggleBell() {
         enabled = !readEnabled();
         localStorage.setItem(ENABLED_KEY, String(enabled));
-        if (!enabled) setOpen(false);
-        else setOpen(items.some(n => !n.read));
+        render();
     }
 
     bell.addEventListener("click", e => { e.stopPropagation(); toggleBell(); });
     bell.addEventListener("keydown", e => {
         if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleBell(); }
     });
+    arrow.addEventListener("click", e => { e.stopPropagation(); setOpen(!isOpen()); });
     document.addEventListener("click", e => { if (isOpen() && !wrap.contains(e.target)) setOpen(false); });
     document.addEventListener("keydown", e => { if (e.key === "Escape" && isOpen()) setOpen(false); });
     list.addEventListener("click", e => {
@@ -3409,7 +3424,7 @@
 
     /* Keep ON/OFF the same everywhere */
     window.addEventListener("storage", e => {                  // changed in another tab
-        if (e.key === ENABLED_KEY) { enabled = readEnabled(); if (!enabled) setOpen(false); render(); }
+        if (e.key === ENABLED_KEY) { enabled = readEnabled(); render(); }
     });
     window.addEventListener("pageshow", () => {                // page shown again with the Back button
         enabled = readEnabled();
@@ -3440,6 +3455,8 @@
         else load(false);
     }, CHECK_EVERY_MS);
 })();
+
+
 </script>
 
 </body>
