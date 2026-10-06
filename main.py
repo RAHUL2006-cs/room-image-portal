@@ -211,6 +211,26 @@ def notify(db: Session, title: str, message: str = None, link: str = None):
 Base.metadata.create_all(bind=engine)
 
 
+def notify_users_created(db: Session, count: int):
+    """'User was created.' for one user, 'Users were created.' for more.
+    If an unseen user notification is still waiting, it is merged into one 'Users were created.'"""
+    if count < 1:
+        return
+    waiting = (db.query(Notification)
+                 .filter(Notification.read == 0,
+                         Notification.title.in_(["User Created", "Users Created"]))
+                 .order_by(Notification.created_at.desc())
+                 .first())
+    if waiting:
+        waiting.title = "Users Created"
+        waiting.message = "Users were created."
+        waiting.created_at = datetime.utcnow()
+    elif count == 1:
+        notify(db, "User Created", "User was created.", "users.html")
+    else:
+        notify(db, "Users Created", "Users were created.", "users.html")
+
+
 # The images table may already exist from before, without the new columns.
 # Add any missing columns so old databases keep working.
 def add_missing_image_columns():
@@ -2076,6 +2096,7 @@ def create_user(
 
     user = User(name=name_from_email(email), email=email, college=college, password_hash=hash_password(password))
     db.add(user)
+    notify_users_created(db, 1)
     db.commit()
     db.refresh(user)
     return user_to_dict(user)
@@ -2260,6 +2281,7 @@ def run_user_import(job_id: int, rows: List[dict], room_id: Optional[int]):
             writer.writerows(sorted(errors))
             job.error_report = out.getvalue()
         job.status = "done"
+        notify_users_created(db, job.succeeded or 0)
         db.commit()
     except Exception as exc:
         db.rollback()
