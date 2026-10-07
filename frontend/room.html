@@ -1075,13 +1075,41 @@
         .viewer-nav:hover { background: rgba(255, 255, 255, 0.26); }
         .viewer-nav.prev { left: 18px; }
         .viewer-nav.next { right: 18px; }
-        .viewer-caption {
-            max-height: 90px;
+        .viewer-body { flex: 1; display: flex; min-height: 0; }
+        .viewer-side {
+            width: 360px;
+            flex-shrink: 0;
+            padding: 26px 28px;
+            border-left: 1px solid rgba(255, 255, 255, 0.08);
             overflow-y: auto;
-            padding: 12px 20px 18px;
-            text-align: center;
-            font-size: 14px;
-            color: #eadfd8;
+            user-select: text;
+            -webkit-user-select: text;
+        }
+        .viewer-side[hidden] { display: none; }
+        .viewer-side-label {
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: #cdbfb6;
+            margin-bottom: 14px;
+        }
+        .viewer-caption {
+            margin: 0;
+            font-size: 17px;
+            line-height: 1.6;
+            color: #fff;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        @media (max-width: 700px) {
+            .viewer-body { flex-direction: column; }
+            .viewer-side { width: auto; max-height: 30vh; padding: 16px 18px; border-left: none; border-top: 1px solid rgba(255, 255, 255, 0.08); }
+            .viewer-side-label { margin-bottom: 8px; font-size: 12px; }
+            .viewer-top { flex-wrap: wrap; row-gap: 10px; }
+            .viewer-title { flex: 1 1 100%; }
+            .viewer-tools { margin-left: auto; }
+            .viewer-caption { font-size: 15px; }
         }
 
         /* ========================= ROOM DETAIL PAGE ========================= */
@@ -1911,12 +1939,17 @@
                 <button type="button" class="viewer-btn" id="viewerClose" title="Close (Esc)">×</button>
             </div>
         </div>
-        <div class="viewer-stage" id="viewerStage">
-            <button type="button" class="viewer-nav prev" id="viewerPrev" aria-label="Previous image">‹</button>
-            <img class="viewer-image" id="viewerImage" alt="">
-            <button type="button" class="viewer-nav next" id="viewerNext" aria-label="Next image">›</button>
+        <div class="viewer-body">
+            <div class="viewer-stage" id="viewerStage">
+                <button type="button" class="viewer-nav prev" id="viewerPrev" aria-label="Previous image">‹</button>
+                <img class="viewer-image" id="viewerImage" alt="">
+                <button type="button" class="viewer-nav next" id="viewerNext" aria-label="Next image">›</button>
+            </div>
+            <aside class="viewer-side" id="viewerSide">
+                <div class="viewer-side-label">Description</div>
+                <p class="viewer-caption" id="viewerCaption"></p>
+            </aside>
         </div>
-        <div class="viewer-caption" id="viewerCaption"></div>
     </div>
 
     <!-- ========================= JAVASCRIPT ========================= -->
@@ -3213,10 +3246,10 @@
             const many = viewerImages.length > 1;
             viewerImage.src = item.url;
             viewerImage.alt = item.name || "";
-            viewerCounter.textContent = many
-                ? `Image ${viewerIndex + 1} of ${viewerImages.length}${item.name ? " · " + item.name : ""}`
-                : (item.name || "");
-            viewerCaption.textContent = item.description || "No description";
+            viewerCounter.textContent = `Image ${viewerIndex + 1} of ${viewerImages.length}`;
+            const description = (item.description || "").trim();
+            viewerCaption.textContent = description;
+            document.getElementById("viewerSide").hidden = !description;   // no description: no panel
             viewerPrev.style.display = many ? "" : "none";
             viewerNext.style.display = many ? "" : "none";
             resetZoom();
