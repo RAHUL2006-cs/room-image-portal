@@ -1739,12 +1739,10 @@
                             <h2>Subjects <span class="tab-count" id="subjectCount">0</span></h2>
                             <p>Open a subject to add and manage its images.</p>
                         </div>
-                        <button type="button" class="subject-add-btn" id="openSubjectBtn">+ Add Subject</button>
                     </div>
-                    <div class="subject-add" id="subjectAddRow" hidden>
+                    <div class="subject-add" id="subjectAddRow">
                         <input type="text" id="subjectInput" class="room-input" placeholder="Subject title, e.g. Cell Biology" autocomplete="off" maxlength="120">
                         <button type="button" class="subject-add-btn" id="addSubjectBtn">Add</button>
-                        <button type="button" class="subject-cancel-btn" id="cancelSubjectBtn" aria-label="Cancel" title="Cancel">×</button>
                     </div>
                     <div class="subject-grid" id="subjectGrid"></div>
                 </div>
@@ -2054,7 +2052,7 @@
             const list = members;
 
             if (!members.length) {
-                memberList.innerHTML = `<div class="empty-box">No members yet. Search above to add users to this room.</div>`;
+                memberList.innerHTML = "";          // no members: show nothing
             } else {
                 memberList.innerHTML = list.slice(0, membersShown).map(u => `
                     <div class="member-row${selectedMembers.has(u.id) ? " selected" : ""}" data-id="${u.id}">
@@ -2354,22 +2352,19 @@
            SUBJECTS TAB
         ========================================================= */
         const subjectGrid = document.getElementById("subjectGrid");
-        const openSubjectBtn = document.getElementById("openSubjectBtn");
         const subjectAddRow = document.getElementById("subjectAddRow");
         const subjectInput = document.getElementById("subjectInput");
         const addSubjectBtn = document.getElementById("addSubjectBtn");
 
-        function showSubjectInput(show) {
-            subjectAddRow.hidden = !show;
-            openSubjectBtn.hidden = show;
+        // The subject box is always shown; this just empties it (ready for the next one)
+        function clearSubjectInput() {
             subjectInput.value = "";
-            if (show) subjectInput.focus();
         }
 
         function renderSubjectCards() {
             document.getElementById("subjectCount").textContent = subjects.length.toLocaleString("en-IN");
             if (!subjects.length) {
-                subjectGrid.innerHTML = `<div class="empty-box" style="grid-column:1/-1">No subjects yet. Click <strong>+ Add Subject</strong> to create one.</div>`;
+                subjectGrid.innerHTML = "";          // no subjects: show nothing
                 return;
             }
             subjectGrid.innerHTML = subjects.map(sub => `
@@ -2398,8 +2393,9 @@
                     body: JSON.stringify({ title })
                 });
                 subjects.push({ id: subject.id, title: subject.title, image_count: 0, cover: "" });
-                showSubjectInput(false);
+                clearSubjectInput();
                 renderSubjectCards();
+                location.hash = `subject/${subject.id}`;     // go straight to its image upload page
                 // the bell shows this one
             } catch (err) {
                 alert(err.message);
@@ -2445,12 +2441,10 @@
             }
         }
 
-        openSubjectBtn.addEventListener("click", () => showSubjectInput(true));
-        document.getElementById("cancelSubjectBtn").addEventListener("click", () => showSubjectInput(false));
         addSubjectBtn.addEventListener("click", addSubject);
         subjectInput.addEventListener("keydown", event => {
             if (event.key === "Enter") { event.preventDefault(); addSubject(); }
-            if (event.key === "Escape") showSubjectInput(false);
+            if (event.key === "Escape") clearSubjectInput();
         });
         subjectGrid.addEventListener("click", event => {
             const card = event.target.closest(".subject-card");
