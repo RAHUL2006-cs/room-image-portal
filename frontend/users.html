@@ -1582,7 +1582,7 @@
                 flex-wrap: wrap;
                 align-items: center;
                 gap: 6px;
-                padding: 12px !important;
+                padding: 12px 12px 12px 52px !important;
                 border-radius: 14px !important;
             }
             .table-wrapper td { width: auto !important; min-height: 0 !important; padding: 0 !important; }
@@ -1804,7 +1804,7 @@
                 <div class="table-wrapper">
                     <table class="users-table">
                         <thead>
-                            <tr><th>Email</th><th>College</th><th>Rooms</th><th>Created On</th><th></th></tr>
+                            <tr><th class="check-col"><input type="checkbox" id="selectAllHead" aria-label="Select all"></th><th>Email</th><th>College</th><th>Rooms</th><th>Created On</th><th></th></tr>
                         </thead>
                         <tbody id="usersBody"><tr class="status-row"><td colspan="5">Loading users…</td></tr></tbody>
                     </table>
@@ -2109,6 +2109,7 @@
             } else {
                 usersBody.innerHTML = loadedUsers.map(u => `
                     <tr data-id="${u.id}"${selectedUserIds.has(u.id) ? ' class="selected"' : ""}>
+                        <td class="cell-check"><input type="checkbox" class="user-check" ${selectedUserIds.has(u.id) ? "checked" : ""} aria-label="Select ${escapeHTML(u.email)}"></td>
                         <td class="cell-main"><div class="user-cell"><span class="user-avatar-small">${escapeHTML(u.email.charAt(0).toUpperCase())}</span>${escapeHTML(u.email)}</div></td>
                         <td data-label="College">${u.college ? `<span class="college-tag">${escapeHTML(u.college)}</span>` : '<span class="muted">—</span>'}</td>
                         <td data-label="Rooms">${fmt(u.room_count)}</td>
@@ -2128,6 +2129,11 @@
         const selectAllUsers = document.getElementById("selectAllUsers");
         const deleteSelectedUsers = document.getElementById("deleteSelectedUsers");
         const deleteAllUsers = document.getElementById("deleteAllUsers");
+        const selectAllHead = document.getElementById("selectAllHead");
+        selectAllHead.addEventListener("change", () => {
+            selectAllUsers.checked = selectAllHead.checked;
+            selectAllUsers.dispatchEvent(new Event("change"));
+        });
 
         function updateUserSelectBar() {
             if (allSelected) loadedUsers.forEach(u => selectedUserIds.add(u.id));
@@ -2151,18 +2157,26 @@
 
         // Tapping anywhere on a user's row (not the Delete button) ticks it
                 // Clicking anywhere on a user's row (not the Delete button) selects / unselects it
+                // Clicking anywhere on a user's row (not the Delete button) ticks it
         usersBody.addEventListener("click", event => {
             const row = event.target.closest("tr[data-id]");
             if (!row || event.target.closest("button, input, a")) return;
+            const box = row.querySelector(".user-check");
+            box.checked = !box.checked;
+            box.dispatchEvent(new Event("change", { bubbles: true }));
+        });
+
+        usersBody.addEventListener("change", event => {
+            if (!event.target.classList.contains("user-check")) return;
+            const row = event.target.closest("tr");
             const id = Number(row.dataset.id);
-            if (selectedUserIds.has(id)) {
-                // Unselecting one user ends "all": keep the other loaded ones selected
+            if (event.target.checked) selectedUserIds.add(id);
+            else {
+                // Unticking one user ends "all": keep the other loaded ones ticked
                 allSelected = false;
                 selectedUserIds.delete(id);
-            } else {
-                selectedUserIds.add(id);
             }
-            row.classList.toggle("selected", selectedUserIds.has(id));
+            row.classList.toggle("selected", event.target.checked);
             updateUserSelectBar();
         });
 
@@ -2217,7 +2231,7 @@
                 totalUsers = data.total;
                 renderUsers();
             } catch (err) {
-                usersBody.innerHTML = `<tr class="status-row error"><td colspan="5">${escapeHTML(err.message)}</td></tr>`;
+                usersBody.innerHTML = `<tr class="status-row error"><td colspan="6">${escapeHTML(err.message)}</td></tr>`;
             }
         }
         function reloadUsers() { loadUsersPage(true); }
