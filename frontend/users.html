@@ -1468,7 +1468,7 @@
             /* checkbox sits in the card's top-right corner */
             .table-wrapper td.cell-check { position: absolute; top: 10px; right: 6px; width: auto; min-height: 0; padding: 0; }
             .table-wrapper td.cell-main { padding-right: 48px; word-break: break-all; }
-            .user-check, #selectAllUsers { width: 26px; height: 26px; }
+            .user-check { width: 26px; height: 26px; }
             .table-wrapper td.cell-check .user-check { margin: 9px; }
             .select-bar label { min-height: 44px; }
             .select-bar .ghost-btn, .member-remove, .delete-user { min-height: 44px; }
@@ -1614,11 +1614,12 @@
             .select-bar .spacer { display: none; }
             .select-bar .ghost-btn { flex: 1 1 auto; }
         }
-                /* Checkboxes only show after the first user is selected */
+
+        /* Checkboxes only show after the first user is selected */
         .users-table:not(.selecting) .check-col,
         .users-table:not(.selecting) .cell-check { display: none !important; }
+        .users-table:not(.selecting) th:nth-child(2) { border-radius: 11px 0 0 11px; }
         .users-table th.check-col input { width: 18px; height: 18px; accent-color: #805035; cursor: pointer; vertical-align: middle; }
-        @media (min-width: 701px) { #selectAllLabel { display: none !important; } }
         @media (max-width: 700px) {
             .users-table:not(.selecting) tbody tr { padding-left: 12px !important; }
         }
@@ -1798,15 +1799,14 @@
                     <label id="selectAllLabel" hidden><input type="checkbox" id="selectAllUsers"> Select all</label>
                     <span id="selectedUsersInfo"></span>
                     <span class="spacer"></span>
-                    <button type="button" class="ghost-btn danger" id="deleteSelectedUsers" disabled>Delete selected</button>
-                    <button type="button" class="ghost-btn danger solid" id="deleteAllUsers">Delete all users</button>
+                    <button type="button" class="ghost-btn danger solid" id="deleteSelectedUsers" hidden>Delete</button>
                 </div>
                 <div class="table-wrapper">
                     <table class="users-table">
                         <thead>
                             <tr><th class="check-col"><input type="checkbox" id="selectAllHead" aria-label="Select all"></th><th>Email</th><th>College</th><th>Rooms</th><th>Created On</th><th></th></tr>
                         </thead>
-                        <tbody id="usersBody"><tr class="status-row"><td colspan="5">Loading users…</td></tr></tbody>
+                        <tbody id="usersBody"><tr class="status-row"><td colspan="6">Loading users…</td></tr></tbody>
                     </table>
                 </div>
                 <button type="button" class="ghost-btn show-more" id="loadMoreBtn" hidden>Load more</button>
@@ -2122,42 +2122,47 @@
             updateUserSelectBar();
         }
 
-        /* ---------- SELECT + DELETE SELECTED / DELETE ALL ---------- */
+        /* ---------- SELECT + DELETE ---------- */
         const selectedUserIds = new Set();
         let allSelected = false;   // "Select all" = every user (also the ones not loaded yet)
         const userSelectBar = document.getElementById("userSelectBar");
+        const selectAllLabel = document.getElementById("selectAllLabel");
         const selectAllUsers = document.getElementById("selectAllUsers");
-        const deleteSelectedUsers = document.getElementById("deleteSelectedUsers");
-        const deleteAllUsers = document.getElementById("deleteAllUsers");
         const selectAllHead = document.getElementById("selectAllHead");
-        selectAllHead.addEventListener("change", () => {
-            selectAllUsers.checked = selectAllHead.checked;
-            selectAllUsers.dispatchEvent(new Event("change"));
-        });
+        const deleteSelectedUsers = document.getElementById("deleteSelectedUsers");
+
+        function setAllSelected(on) {
+            selectedUserIds.clear();
+            allSelected = on;
+            if (on) loadedUsers.forEach(u => selectedUserIds.add(u.id));
+            renderUsers();
+        }
+        selectAllUsers.addEventListener("change", () => setAllSelected(selectAllUsers.checked));
+        selectAllHead.addEventListener("change", () => setAllSelected(selectAllHead.checked));
 
         function updateUserSelectBar() {
             if (allSelected) loadedUsers.forEach(u => selectedUserIds.add(u.id));
             [...selectedUserIds].forEach(id => { if (!loadedUsers.some(u => u.id === id)) selectedUserIds.delete(id); });
             if (totalUsers === 0) allSelected = false;
+            // Ticking every user by hand counts as "all"
+            if (!allSelected && totalUsers > 0 && selectedUserIds.size === totalUsers) allSelected = true;
             userSelectBar.hidden = totalUsers === 0;
             const n = allSelected ? totalUsers : selectedUserIds.size;
-            document.getElementById("selectAllLabel").hidden = n === 0;
+            selectAllLabel.hidden = n === 0;
             selectAllUsers.checked = allSelected;
             selectAllUsers.indeterminate = !allSelected && n > 0;
-            selectAllHead.checked = selectAllUsers.checked;
-            selectAllHead.indeterminate = selectAllUsers.indeterminate;
+            selectAllHead.checked = allSelected;
+            selectAllHead.indeterminate = !allSelected && n > 0;
             document.querySelector(".users-table").classList.toggle("selecting", n > 0);
-            document.getElementById("selectAllLabel").hidden = n === 0;
             document.getElementById("selectedUsersInfo").textContent = n ? `${fmt(n)} selected` : "";
-            deleteSelectedUsers.disabled = n === 0;
-            deleteSelectedUsers.textContent = n ? `Delete selected (${fmt(n)})` : "Delete selected";
+            deleteSelectedUsers.hidden = n === 0;
             const search = userSearch.value.trim();
-            deleteAllUsers.textContent = search ? `Delete all ${fmt(totalUsers)} matching` : `Delete all users (${fmt(totalUsers)})`;
+            deleteSelectedUsers.textContent = allSelected
+                ? (search ? `Delete all ${fmt(n)} matching` : `Delete all (${fmt(n)})`)
+                : `Delete (${fmt(n)})`;
         }
 
-        // Tapping anywhere on a user's row (not the Delete button) ticks it
-                // Clicking anywhere on a user's row (not the Delete button) selects / unselects it
-                // Clicking anywhere on a user's row (not the Delete button) ticks it
+        // Clicking anywhere on a user's row (not the Delete button) ticks it
         usersBody.addEventListener("click", event => {
             const row = event.target.closest("tr[data-id]");
             if (!row || event.target.closest("button, input, a")) return;
@@ -2180,16 +2185,9 @@
             updateUserSelectBar();
         });
 
-        selectAllUsers.addEventListener("change", () => {
-            selectedUserIds.clear();
-            allSelected = selectAllUsers.checked;
-            if (allSelected) loadedUsers.forEach(u => selectedUserIds.add(u.id));
-            renderUsers();
-        });
-
         async function deleteUsers(body, count) {
             try {
-                const result = await api("/admin/users/delete", { method: "POST", body: JSON.stringify(body) });
+                await api("/admin/users/delete", { method: "POST", body: JSON.stringify(body) });
                 selectedUserIds.clear();
                 allSelected = false;
                 // the bell shows this one
@@ -2200,6 +2198,7 @@
             }
         }
 
+        // One Delete button: deletes the ticked users, or everyone when "Select all" is on
         deleteSelectedUsers.addEventListener("click", () => {
             const search = userSearch.value.trim();
             if (allSelected) {
@@ -2211,13 +2210,6 @@
             if (!n) return;
             if (!confirm(`Delete ${fmt(n)} selected ${n === 1 ? "user" : "users"}?\n\nThey are removed from every room and can't log in any more. This can't be undone.`)) return;
             deleteUsers({ ids: [...selectedUserIds] }, n);
-        });
-
-        deleteAllUsers.addEventListener("click", () => {
-            const search = userSearch.value.trim();
-            const what = search ? `all ${fmt(totalUsers)} users matching "${search}"` : `ALL ${fmt(totalUsers)} users`;
-            if (!confirm(`Delete ${what}?\n\nThey are removed from every room and can't log in any more. This can't be undone.`)) return;
-            deleteUsers({ all: true, search: search || null }, totalUsers);
         });
 
         async function loadUsersPage(reset) {
