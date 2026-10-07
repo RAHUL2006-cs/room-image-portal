@@ -1797,16 +1797,15 @@
                 </div>
                 <div class="select-bar" id="userSelectBar" hidden>
                     <label id="selectAllLabel" hidden><input type="checkbox" id="selectAllUsers"> Select all</label>
-                    <span id="selectedUsersInfo"></span>
                     <span class="spacer"></span>
                     <button type="button" class="ghost-btn danger solid" id="deleteSelectedUsers" hidden>Delete</button>
                 </div>
                 <div class="table-wrapper">
                     <table class="users-table">
                         <thead>
-                            <tr><th class="check-col"></th><th>Email</th><th>College</th><th>Rooms</th><th>Created On</th><th></th></tr>
+                            <tr><th class="check-col"></th><th>Email</th><th>College</th><th>Rooms</th><th>Created On</th></tr>
                         </thead>
-                        <tbody id="usersBody"><tr class="status-row"><td colspan="6">Loading users…</td></tr></tbody>
+                        <tbody id="usersBody"><tr class="status-row"><td colspan="5">Loading users…</td></tr></tbody>
                     </table>
                 </div>
                 <button type="button" class="ghost-btn show-more" id="loadMoreBtn" hidden>Load more</button>
@@ -2103,7 +2102,7 @@
             if (allSelected) loadedUsers.forEach(u => selectedUserIds.add(u.id));
             document.getElementById("userTotal").textContent = fmt(totalUsers);
             if (!loadedUsers.length) {
-                usersBody.innerHTML = `<tr class="status-row"><td colspan="6">${userSearch.value.trim()
+                usersBody.innerHTML = `<tr class="status-row"><td colspan="5">${userSearch.value.trim()
                     ? `No users match "${escapeHTML(userSearch.value.trim())}".`
                     : "No users yet. Add one above or upload a file."}</td></tr>`;
             } else {
@@ -2114,7 +2113,6 @@
                         <td data-label="College">${u.college ? `<span class="college-tag">${escapeHTML(u.college)}</span>` : '<span class="muted">—</span>'}</td>
                         <td data-label="Rooms">${fmt(u.room_count)}</td>
                         <td data-label="Created On">${formatDate(u.created_at)}</td>
-                        <td class="cell-actions"><button type="button" class="member-remove delete-user">Delete</button></td>
                     </tr>`).join("");
             }
             loadMoreBtn.hidden = loadedUsers.length >= totalUsers;
@@ -2149,7 +2147,6 @@
             selectAllLabel.hidden = n === 0;
             selectAllUsers.checked = allSelected;
             document.querySelector(".users-table").classList.toggle("selecting", n > 0);
-            document.getElementById("selectedUsersInfo").textContent = n ? `${fmt(n)} selected` : "";
             deleteSelectedUsers.hidden = n === 0;
             const search = userSearch.value.trim();
             deleteSelectedUsers.textContent = allSelected
@@ -2218,7 +2215,7 @@
                 totalUsers = data.total;
                 renderUsers();
             } catch (err) {
-                usersBody.innerHTML = `<tr class="status-row error"><td colspan="6">${escapeHTML(err.message)}</td></tr>`;
+                usersBody.innerHTML = `<tr class="status-row error"><td colspan="5">${escapeHTML(err.message)}</td></tr>`;
             }
         }
         function reloadUsers() { loadUsersPage(true); }
@@ -2230,25 +2227,6 @@
             searchTimer = setTimeout(reloadUsers, 250);
         });
         loadMoreBtn.addEventListener("click", () => loadUsersPage(false));
-
-        usersBody.addEventListener("click", async event => {
-            const button = event.target.closest(".delete-user");
-            if (!button) return;
-            const id = Number(button.closest("tr").dataset.id);
-            const user = loadedUsers.find(u => u.id === id);
-            if (!confirm(`Delete ${user.email}?\n\nThey will be removed from ${user.room_count === 1 ? "1 room" : `${user.room_count} rooms`} and can't log in any more. This can't be undone.`)) return;
-            button.disabled = true;
-            try {
-                await api(`/admin/users/${id}`, { method: "DELETE" });
-                loadedUsers = loadedUsers.filter(u => u.id !== id);
-                totalUsers--;
-                renderUsers();
-                // the bell shows this one
-            } catch (err) {
-                alert(err.message);
-                button.disabled = false;
-            }
-        });
 
         /* ---------- LOGOUT ---------- */
         document.querySelector(".profile").addEventListener("click", function () {
