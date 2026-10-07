@@ -850,6 +850,41 @@
         .upload-failed-list { flex-basis: 100%; margin: 2px 0 0 18px; font-weight: 400; line-height: 1.6; }
         .upload-dismiss { border: none; background: none; color: inherit; font-weight: 700; text-decoration: underline; cursor: pointer; font-size: 13px; }
         #imagesPanel { margin-top: 20px; }
+
+        /* ---------- Upload loading screen: uploading -> compressing -> done / failed ---------- */
+        .upload-overlay {
+            position: fixed; inset: 0; z-index: 900;
+            display: flex; align-items: center; justify-content: center; padding: 16px;
+            background: rgba(45, 30, 22, 0.35);
+            animation: upFade .15s ease;
+        }
+        .upload-overlay[hidden] { display: none; }
+        @keyframes upFade { from { opacity: 0; } to { opacity: 1; } }
+        .upload-card {
+            width: 100%; max-width: 420px; background: #fff; border-radius: 18px;
+            padding: 28px 26px 22px; text-align: center;
+            box-shadow: 0 24px 60px rgba(40, 25, 18, 0.28);
+        }
+        .up-icon { height: 46px; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; font-size: 34px; font-weight: 700; }
+        .up-icon.done { color: #13843a; }
+        .up-icon.failed { color: #c62828; }
+        .up-title { display: block; font-size: 19px; color: #2d211c; }
+        .up-count { margin-top: 6px; font-size: 14px; color: #7a6a60; min-height: 18px; }
+        .up-mainbar { height: 10px; background: #f1e8e2; border-radius: 99px; overflow: hidden; margin: 18px 0 8px; }
+        .up-mainbar span { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #a66a47, #c88a63); border-radius: 99px; transition: width .25s ease; }
+        .up-mainbar.done span { background: #2e9e52; }
+        .up-mainbar.failed span { background: #d9482b; }
+        .up-percent { font-size: 13px; font-weight: 700; color: #9a5f1d; }
+        .up-failed { list-style: none; margin: 14px 0 0; padding: 0; text-align: left; max-height: 140px; overflow-y: auto; }
+        .up-failed li { font-size: 13px; color: #c62828; padding: 6px 10px; background: #fdecec; border-radius: 8px; margin-top: 6px; }
+        .up-failed li b { color: #8e1c1c; }
+        .up-actions { display: flex; gap: 10px; justify-content: center; margin-top: 16px; }
+        .up-actions:empty { display: none; }
+        .up-actions button { min-height: 42px; padding: 0 18px; border-radius: 10px; font-weight: 700; font-size: 14px; cursor: pointer; border: 1px solid #dccfc6; background: #fff; color: #4d2f20; }
+        .up-actions .up-retry { background: #c62828; border-color: #c62828; color: #fff; }
+        .up-spinner { width: 16px; height: 16px; border: 2.5px solid #ead9cd; border-top-color: #a66a47; border-radius: 50%; animation: upSpin .8s linear infinite; flex-shrink: 0; display: inline-block; }
+        .up-spinner.big { width: 42px; height: 42px; border-width: 4px; }
+        @keyframes upSpin { to { transform: rotate(360deg); } }
         .upload-retry-all {
             margin-left: auto;
             padding: 6px 12px;
@@ -1803,7 +1838,6 @@
                         </span>
                     </label>
                     <input type="file" id="imageInput" class="image-input-hidden" accept="image/*" multiple>
-                    <div class="upload-summary" id="uploadSummary"></div>
                 </div>
 
                 <!-- IMAGES: everything except uploading -->
@@ -1823,6 +1857,20 @@
             </div>
         </section>
     </main>
+
+    <!-- ========================= UPLOAD LOADING SCREEN ========================= -->
+    <div class="upload-overlay" id="uploadPopup" hidden role="status" aria-live="polite">
+        <div class="upload-card">
+            <div class="up-icon" id="uploadIcon"><span class="up-spinner big" id="uploadSpinner"></span></div>
+            <strong class="up-title" id="uploadPopupTitle">Uploading…</strong>
+            <div class="up-count" id="uploadCount"></div>
+            <div class="up-mainbar"><span id="uploadBar"></span></div>
+            <div class="up-percent" id="uploadPercent">0%</div>
+            <ul class="up-failed" id="uploadPopupList"></ul>
+            <div class="up-actions" id="uploadActions"></div>
+            <div class="upload-summary" id="uploadSummary" hidden></div>
+        </div>
+    </div>
 
     <!-- ========================= EDIT ROOM DETAILS ========================= -->
     <div class="room-modal-overlay" id="editModal">
@@ -2641,6 +2689,7 @@
 
         function updateSummary() {
             const tracked = currentItems().filter(item => item.status);
+            renderUploadPopup(tracked);
             if (!tracked.length) {
                 uploadSummary.className = "upload-summary";
                 uploadSummary.innerHTML = "";
@@ -2654,9 +2703,7 @@
                 uploadSummary.textContent = `Uploading ${finished} of ${tracked.length}… · ${done} done` + (failed ? ` · ${failed} failed` : "");
             } else if (failed) {
                 uploadSummary.className = "upload-summary has-failed";
-                const list = tracked.filter(item => item.status === "failed")
-                    .map(item => `<li>${escapeHTML(item.name || "Image")}: ${escapeHTML(item.error || "Upload failed")}</li>`).join("");
-                uploadSummary.innerHTML = `✓ ${done} uploaded · ✗ ${failed} failed <button type="button" class="upload-retry-all">Retry failed</button> <button type="button" class="upload-dismiss">Dismiss</button><ul class="upload-failed-list">${list}</ul>`;
+                uploadSummary.innerHTML = `✓ ${done} uploaded · ✗ ${failed} failed <button type="button" class="upload-retry-all">Retry failed</button> <button type="button" class="upload-dismiss">Dismiss</button>`;
             } else {
                 uploadSummary.className = "upload-summary all-done";
                 uploadSummary.textContent = `✓ All ${done} ${done === 1 ? "image" : "images"} uploaded`;
@@ -2754,11 +2801,12 @@
         function finishedAll() {
             const done = allItems.filter(item => item.status === "done").length;
             const failed = allItems.filter(item => item.status === "failed").length;
-            if (failed) showToast(`${done} uploaded · ${failed} failed`);   // all good: the bell shows it
+            // the upload pop-up shows the result (and the bell says "Images were uploaded.")
             window.dispatchEvent(new Event("nb-refresh"));                   // tell the bell to check now
         }
 
         function enqueue(items) {
+            popupClosed = false;                 // a new upload shows the pop-up again
             items.forEach(item => { item.status = "waiting"; item.error = ""; item.progress = 0; });
             items.forEach(item => { const card = cardFor(item); if (card) setStatus(item, "waiting"); });
             queue.push(...items);
@@ -2912,6 +2960,96 @@
                 enqueue(currentItems().filter(item => item.status === "failed"));
             } else if (event.target.closest(".upload-dismiss")) {
                 // Forget the failed files and hide the message
+                currentItems().filter(item => item.status === "failed").forEach(item => URL.revokeObjectURL(item.url));
+                allItems = allItems.filter(item => !(item.subjectId === currentSubjectId && item.status === "failed"));
+                currentItems().forEach(item => { if (item.status === "done") item.status = ""; });
+                updateSummary();
+            }
+        });
+
+        /* ---------- UPLOAD LOADING SCREEN ---------- */
+        const uploadPopup = document.getElementById("uploadPopup");
+        const uploadPopupList = document.getElementById("uploadPopupList");
+        const uploadPopupTitle = document.getElementById("uploadPopupTitle");
+        const uploadIcon = document.getElementById("uploadIcon");
+        const uploadCount = document.getElementById("uploadCount");
+        const uploadBar = document.getElementById("uploadBar");
+        const uploadPercent = document.getElementById("uploadPercent");
+        const uploadActions = document.getElementById("uploadActions");
+        let popupClosed = false;          // hidden by hand: stays hidden until the next upload
+        let popupHideTimer = null;
+        let shownState = "";
+
+        function renderUploadPopup(tracked) {
+            if (!tracked.length || popupClosed) { uploadPopup.hidden = true; return; }
+            uploadPopup.hidden = false;
+
+            const count = s => tracked.filter(item => item.status === s).length;
+            const done = count("done"), failed = count("failed");
+            const uploading = count("uploading"), compressing = count("compressing"), waiting = count("waiting");
+            const busy = uploading + compressing + waiting > 0;
+
+            // One bar for the whole upload: uploading = 0-90 %, compressing = 95 %, done / failed = 100 %
+            const total = tracked.reduce((sum, item) => sum + (
+                item.status === "done" || item.status === "failed" ? 100 :
+                item.status === "compressing" ? 95 :
+                item.status === "uploading" ? (item.progress || 0) * 0.9 : 0), 0);
+            const percent = Math.round(total / tracked.length);
+            uploadBar.style.width = percent + "%";
+            uploadPercent.textContent = percent + "%";
+            const n = tracked.length;
+            const word = n === 1 ? "image" : "images";
+
+            let state;
+            if (busy) {
+                state = "busy";
+                uploadPopupTitle.textContent = uploading || waiting ? "Uploading…" : "Compressing…";
+                uploadCount.textContent = `${done + failed} of ${n} ${word} finished`;
+            } else if (failed) {
+                state = "failed";
+                uploadPopupTitle.textContent = failed === n ? "Upload failed" : `${failed} of ${n} ${word} failed`;
+                uploadCount.textContent = done ? `${done} uploaded` : "";
+            } else {
+                state = "done";
+                uploadPopupTitle.textContent = "Done";
+                uploadCount.textContent = `${n} ${word} uploaded`;
+            }
+            if (n === 1) uploadCount.textContent = "";      // single image: no counts
+            uploadCount.hidden = !uploadCount.textContent;
+            uploadBar.parentElement.className = "up-mainbar " + (state === "busy" ? "" : state);
+
+            if (state !== shownState) {           // only redraw the parts that change with the state
+                shownState = state;
+                uploadIcon.className = "up-icon " + state;
+                uploadIcon.innerHTML = state === "busy" ? '<span class="up-spinner big"></span>' : state === "done" ? "✓" : "!";
+                uploadPercent.hidden = state !== "busy";
+                uploadActions.innerHTML = state === "busy"
+                    ? '<button type="button" class="up-hide">Hide</button>'
+                    : state === "failed"
+                        ? '<button type="button" class="up-retry">Retry</button><button type="button" class="up-close">Close</button>'
+                        : "";
+            }
+            uploadPopupList.innerHTML = state === "failed"
+                ? tracked.filter(item => item.status === "failed")
+                    .map(item => `<li><b>${escapeHTML(item.name || "Image")}</b> · ${escapeHTML(item.error || "Upload failed")}</li>`).join("")
+                : "";
+
+            // Done with no errors: close by itself
+            clearTimeout(popupHideTimer);
+            if (state === "done") popupHideTimer = setTimeout(() => {
+                uploadPopup.hidden = true;
+                currentItems().forEach(item => { if (item.status === "done") item.status = ""; });
+            }, 1500);
+        }
+
+        uploadActions.addEventListener("click", event => {
+            if (event.target.closest(".up-retry")) {
+                enqueue(currentItems().filter(item => item.status === "failed"));
+            } else if (event.target.closest(".up-hide")) {
+                popupClosed = true;               // keep working; uploads carry on in the background
+                uploadPopup.hidden = true;
+            } else if (event.target.closest(".up-close")) {
+                // Forget the failed files and close
                 currentItems().filter(item => item.status === "failed").forEach(item => URL.revokeObjectURL(item.url));
                 allItems = allItems.filter(item => !(item.subjectId === currentSubjectId && item.status === "failed"));
                 currentItems().forEach(item => { if (item.status === "done") item.status = ""; });
