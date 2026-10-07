@@ -2043,31 +2043,9 @@ class CreateUserRequest(BaseModel):
     password: Optional[str] = None           # blank = default password
 
 
-class DefaultPasswordRequest(BaseModel):
-    password: str
-
-
 @app.get("/admin/settings")
 def read_settings(current_admin: int = Depends(get_current_admin), db: Session = Depends(get_db)):
     return {"default_password": get_default_password(db)}
-
-
-@app.put("/admin/settings/default-password")
-def set_default_password(
-    data: DefaultPasswordRequest,
-    current_admin: int = Depends(get_current_admin),
-    db: Session = Depends(get_db)
-):
-    password = data.password.strip()
-    if len(password) < 6:
-        raise HTTPException(status_code=400, detail="The default password needs at least 6 characters")
-    row = db.query(Setting).filter(Setting.key == "default_password").first()
-    if row:
-        row.value = password
-    else:
-        db.add(Setting(key="default_password", value=password))
-    db.commit()
-    return {"default_password": password}
 
 
 @app.get("/admin/users/list")
@@ -2436,7 +2414,7 @@ else:
     # The .html pages were uploaded next to main.py (no "frontend" folder).
     # Serve ONLY these pages, so main.py / .env etc. can never be downloaded.
     PAGES = {"index.html", "login.html", "signup.html", "dashboard.html", "room.html",
-             "users.html", "settings.html", "user_dashboard.html"}
+             "users.html", "user_dashboard.html"}
 
     @app.get("/", include_in_schema=False)
     def home_page():
