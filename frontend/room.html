@@ -1264,6 +1264,8 @@
         .ghost-btn.danger.solid:hover { background: #a91f1f; }
         .member-check { width: 18px; height: 18px; accent-color: #805035; cursor: pointer; flex-shrink: 0; }
         .member-row { cursor: pointer; }
+        /* Checkboxes only show after the first member is selected (same as users and images) */
+        .member-list:not(.selecting) .member-check { display: none; }
         .users-table tbody tr, .member-row, .gallery-check-wrap, .subject-card { -webkit-tap-highlight-color: transparent; }
         .member-row.selected { background: #fbf1ea; border-radius: 10px; }
         .member-tools { display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 12px; }
@@ -1808,10 +1810,8 @@
 
                     <div class="select-bar member-bar" id="memberSelectBar" hidden>
                         <label><input type="checkbox" id="selectAllMembers"> Select all</label>
-                        <span id="selectedMembersInfo"></span>
                         <span class="member-bar-buttons">
-                            <button type="button" class="ghost-btn danger solid" id="removeSelectedMembers" hidden>Delete selected</button>
-                            <button type="button" class="ghost-btn danger" id="removeAllMembers">Delete all</button>
+                            <button type="button" class="ghost-btn danger solid" id="removeSelectedMembers">Remove</button>
                         </span>
                     </div>
                     <div class="member-list" id="memberList"></div>
@@ -2299,19 +2299,18 @@
         const memberSelectBar = document.getElementById("memberSelectBar");
         const selectAllMembers = document.getElementById("selectAllMembers");
         const removeSelectedMembers = document.getElementById("removeSelectedMembers");
-        const removeAllMembers = document.getElementById("removeAllMembers");
 
         function updateMemberBar() {
             [...selectedMembers].forEach(id => { if (!members.some(u => u.id === id)) selectedMembers.delete(id); });
-            memberSelectBar.hidden = members.length === 0;
             const n = selectedMembers.size;
-            selectAllMembers.checked = n > 0 && n === members.length;
-            selectAllMembers.indeterminate = n > 0 && n < members.length;
-            document.getElementById("selectedMembersInfo").textContent = n ? `${n.toLocaleString("en-IN")} selected` : "";
-            // The Delete button shows up only after people are selected
-            removeSelectedMembers.hidden = n === 0;
-            removeSelectedMembers.textContent = `Delete selected (${n.toLocaleString("en-IN")})`;
-            removeAllMembers.textContent = `Delete all (${members.length.toLocaleString("en-IN")})`;
+            const all = n > 0 && n === members.length;
+            memberSelectBar.hidden = n === 0;                        // shows after the first member is clicked
+            memberList.classList.toggle("selecting", n > 0);         // checkboxes only while selecting
+            selectAllMembers.checked = all;
+            selectAllMembers.indeterminate = false;
+            selectAllMembers.closest("label").hidden = members.length < 2;   // one member: no "Select all"
+            removeSelectedMembers.textContent = members.length < 2 ? "Remove"
+                : all ? `Remove all (${n.toLocaleString("en-IN")})` : `Remove (${n.toLocaleString("en-IN")})`;
         }
 
         memberList.addEventListener("change", event => {
@@ -2349,15 +2348,15 @@
         removeSelectedMembers.addEventListener("click", () => {
             const n = selectedMembers.size;
             if (!n) return;
+            if (members.length > 1 && n === members.length) {          // everyone selected
+                if (!confirm(`Remove ALL ${n.toLocaleString("en-IN")} members from "${room.name}"?\n\nNobody will see this room until you add users again. Their accounts are kept.`)) return;
+                removeMembers({ all: true });
+                return;
+            }
             if (!confirm(`Remove ${n.toLocaleString("en-IN")} selected ${n === 1 ? "member" : "members"} from "${room.name}"?\n\nThey won't see this room any more. Their accounts are kept.`)) return;
             removeMembers({ user_ids: [...selectedMembers] });
         });
 
-        removeAllMembers.addEventListener("click", () => {
-            if (!members.length) return;
-            if (!confirm(`Remove ALL ${members.length.toLocaleString("en-IN")} members from "${room.name}"?\n\nNobody will see this room until you add users again. Their accounts are kept.`)) return;
-            removeMembers({ all: true });
-        });
 
         showMoreMembers.addEventListener("click", () => { membersShown += PAGE; renderMembers(); });
 
