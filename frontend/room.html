@@ -2727,13 +2727,21 @@
                 xhr.open("POST", `${API_BASE}/admin/subjects/${item.subjectId}/images`);
                 xhr.setRequestHeader("Authorization", `Bearer ${token}`);
 
+                const startedAt = Date.now();
                 setStatus(item, "uploading", { progress: 0 });
                 xhr.upload.onprogress = event => {
                     if (!event.lengthComputable) return;
                     const percent = Math.round((event.loaded / event.total) * 100);
                     if (percent < 100) setStatus(item, "uploading", { progress: percent });
                 };
-                xhr.upload.onload = () => setStatus(item, "compressing");
+                // File sent: the server now compresses and saves it. Small files send almost instantly,
+                // so "Uploading…" stays on screen for at least 0.8 s before it switches.
+                xhr.upload.onload = () => {
+                    const wait = Math.max(0, 800 - (Date.now() - startedAt));
+                    setTimeout(() => {
+                        if (item.status === "uploading") setStatus(item, "compressing", { compressAt: Date.now() });
+                    }, wait);
+                };
 
                 xhr.onload = () => {
                     let data = null;
@@ -2978,6 +2986,7 @@
         const uploadActions = document.getElementById("uploadActions");
         let popupClosed = false;          // hidden by hand: stays hidden until the next upload
         let popupHideTimer = null;
+        let popupTick = null;
         let shownState = "";
 
         function renderUploadPopup(tracked) {
@@ -2992,8 +3001,8 @@
             // One bar for the whole upload: uploading = 0-90 %, compressing = 95 %, done / failed = 100 %
             const total = tracked.reduce((sum, item) => sum + (
                 item.status === "done" || item.status === "failed" ? 100 :
-                item.status === "compressing" ? 95 :
-                item.status === "uploading" ? (item.progress || 0) * 0.9 : 0), 0);
+                item.status === "compressing" ? 70 + 27 * (1 - Math.exp(-(Date.now() - (item.compressAt || Date.now())) / 4000)) :
+                item.status === "uploading" ? (item.progress || 0) * 0.7 : 0), 0);
             const percent = Math.round(total / tracked.length);
             uploadBar.style.width = percent + "%";
             uploadPercent.textContent = percent + "%";
@@ -3033,6 +3042,10 @@
                 ? tracked.filter(item => item.status === "failed")
                     .map(item => `<li><b>${escapeHTML(item.name || "Image")}</b> · ${escapeHTML(item.error || "Upload failed")}</li>`).join("")
                 : "";
+
+            // While working, redraw a few times a second so the bar keeps moving during "Compressing…"
+            clearTimeout(popupTick);
+            if (state === "busy") popupTick = setTimeout(() => renderUploadPopup(currentItems().filter(item => item.status)), 250);
 
             // Done with no errors: close by itself
             clearTimeout(popupHideTimer);
