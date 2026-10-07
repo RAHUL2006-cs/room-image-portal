@@ -1799,22 +1799,6 @@
                     </div>
                     <!-- BULK UPLOAD straight into this room -->
                     <button type="button" class="ghost-btn bulk-toggle" id="bulkToggle">⬆ Bulk upload users (CSV / XLSX)</button>
-                    <div class="room-bulk" id="roomBulk" hidden>
-                        <div class="room-bulk-head">
-                            <span id="roomBulkName">Columns: <strong>email, college, password</strong> (blank password = default).</span>
-                            <span class="room-bulk-tools">
-                                <button type="button" class="link-btn" id="roomTemplateBtn">Download template</button>
-                                <button type="button" class="room-bulk-close" id="roomBulkClose" aria-label="Close" title="Close">×</button>
-                            </span>
-                        </div>
-                        <input type="file" id="roomBulkFile" class="image-input-hidden" accept=".csv,.xlsx">
-                        <div class="job-box" id="roomJobBox" hidden>
-                            <div class="job-line"><span id="roomJobText">Checking rows…</span><span id="roomJobPercent"></span></div>
-                            <div class="job-bar"><span id="roomJobBar"></span></div>
-                            <div class="job-summary" id="roomJobSummary" hidden></div>
-                        </div>
-                    </div>
-
                     <div class="select-bar member-bar" id="memberSelectBar" hidden>
                         <label><input type="checkbox" id="selectAllMembers"> Select all</label>
                         <span class="member-bar-buttons">
@@ -1823,6 +1807,22 @@
                     </div>
                     <div class="member-list" id="memberList"></div>
                     <button type="button" class="ghost-btn show-more" id="showMoreMembers" hidden>Show more</button>
+
+                    <div class="room-bulk" id="roomBulk" hidden>
+                        <div class="room-bulk-head">
+                            <span id="roomBulkName">Columns: <strong>email, college, password</strong> (blank password = default).</span>
+                            <span class="room-bulk-tools">
+                                <button type="button" class="link-btn" id="roomTemplateBtn">Download template</button>
+                                <button type="button" class="room-bulk-close" id="roomBulkClose" aria-label="Close" title="Close">×</button>
+                            </span>
+                        </div>
+                        <input type="file" id="roomBulkFile" class="image-input-hidden" accept=".csv,.xlsx" multiple>
+                        <div class="job-box" id="roomJobBox" hidden>
+                            <div class="job-line"><span id="roomJobText">Checking rows…</span><span id="roomJobPercent"></span></div>
+                            <div class="job-bar"><span id="roomJobBar"></span></div>
+                            <div class="job-summary" id="roomJobSummary" hidden></div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- SUBJECTS -->
@@ -2230,11 +2230,13 @@
 
         // Picking a file starts the upload right away
         roomBulkFile.addEventListener("change", () => {
-            const file = roomBulkFile.files[0];
-            roomBulkFile.value = "";          // lets the same file be picked again
-            if (!file) return;
-            if (!/\.(csv|xlsx)$/i.test(file.name)) { alert("Choose a .csv or .xlsx file."); return; }
-            startRoomBulk(file);
+            const files = [...roomBulkFile.files];
+            roomBulkFile.value = "";          // lets the same files be picked again
+            if (!files.length) return;
+            const good = files.filter(f => /\.(csv|xlsx)$/i.test(f.name));
+            const bad = files.filter(f => !good.includes(f));
+            if (bad.length) alert(`These files were skipped (only .csv or .xlsx):\n\n${bad.map(f => f.name).join("\n")}`);
+            if (good.length) startRoomBulk(good);
         });
 
         function showRoomJob(job) {
@@ -2247,57 +2249,77 @@
                 return;
             }
             text.textContent = job.status === "done" ? "Done" : "Upload stopped with an error";
-            roomJobSummary.hidden = false;
-            // Done = everyone who is now in the room; Failed = rows that couldn't be used (see the error report)
-            const done = (job.created || 0) + (job.existing_added || 0) + (job.existing_already || 0);
-            const failed = (job.skipped || 0) + (job.failed || 0);
-            roomJobSummary.innerHTML = `
-                <span class="pill ok">✓ ${nf(done)} done</span>
-                <span class="pill fail">${nf(failed)} failed</span>
-                ${job.has_error_report ? `<button type="button" class="link-btn" id="roomErrorReport" data-id="${job.id}">Download error report</button>` : ""}`;
         }
 
-        async function startRoomBulk(file) {
+        /* Summary for all the files of this upload */
+        function showRoomTotals(totals, fileCount) {
+            roomJobSummary.hidden = false;
+            document.getElementById("roomJobText").textContent = fileCount > 1 ? `All ${fileCount} files done` : "Done";
+            document.getElementById("roomJobBar").style.width = "100%";
+            document.getElementById("roomJobPercent").textContent = "100%";
+            // Done = everyone who is now in the room; Failed = rows that couldn't be used (see the error report)
+            roomJobSummary.innerHTML = `
+                <span class="pill ok">✓ ${nf(totals.done)} done</span>
+                <span class="pill fail">${nf(totals.failed)} failed</span>
+                ${totals.reports.map(r => `<button type="button" class="link-btn room-error-report" data-id="${r.id}" data-name="${escapeHTML(r.name)}">Error report${fileCount > 1 ? " · " + escapeHTML(r.name) : ""}</button>`).join("")}
+                ${totals.brokenFiles.length ? `<span class="pill fail">Not uploaded: ${escapeHTML(totals.brokenFiles.join(", "))}</span>` : ""}`;
+        }
+
+        async function startRoomBulk(files) {
             if (roomBulkRunning) return;
-            const form = new FormData();
-            form.append("file", file);
-            form.append("room_id", String(ROOM_ID));
             roomBulkRunning = true;
             roomBulk.hidden = false;
             document.getElementById("roomBulkClose").hidden = true;      // can't close while it's saving
-            roomBulkName.textContent = file.name;
             bulkToggle.disabled = true;
             bulkToggle.textContent = "Uploading…";
             roomJobBox.hidden = false;
             roomJobSummary.hidden = true;
-            document.getElementById("roomJobText").textContent = "Sending the file…";
-            try {
-                let job = await api("/admin/users/bulk", { method: "POST", body: form });
-                showRoomJob(job);
-                while (job.status === "running") {
-                    await new Promise(resolve => setTimeout(resolve, 700));
-                    job = await api(`/admin/jobs/${job.id}`);
+            const totals = { done: 0, failed: 0, reports: [], brokenFiles: [] };
+
+            // Files go one after another (each one is its own job on the server)
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                roomBulkName.textContent = files.length > 1 ? `File ${i + 1} of ${files.length}: ${file.name}` : file.name;
+                document.getElementById("roomJobText").textContent = "Sending the file…";
+                document.getElementById("roomJobBar").style.width = "0%";
+                document.getElementById("roomJobPercent").textContent = "";
+                const form = new FormData();
+                form.append("file", file);
+                form.append("room_id", String(ROOM_ID));
+                try {
+                    let job = await api("/admin/users/bulk", { method: "POST", body: form });
                     showRoomJob(job);
+                    while (job.status === "running") {
+                        await new Promise(resolve => setTimeout(resolve, 700));
+                        job = await api(`/admin/jobs/${job.id}`);
+                        showRoomJob(job);
+                    }
+                    totals.done += (job.created || 0) + (job.existing_added || 0) + (job.existing_already || 0);
+                    totals.failed += (job.skipped || 0) + (job.failed || 0);
+                    if (job.has_error_report) totals.reports.push({ id: job.id, name: file.name });
+                } catch (err) {
+                    totals.brokenFiles.push(`${file.name} (${err.message})`);   // carry on with the next file
                 }
+            }
+
+            try {
                 // Show the new members
                 const fresh = await api(`/admin/rooms/${ROOM_ID}`);
                 room.users = fresh.users;
                 members = fresh.users;
                 renderMembers();
-                // the bell shows "Members were added to …" (and "Users were created." for new accounts)
-            } catch (err) {
-                document.getElementById("roomJobText").textContent = err.message;
-                alert(err.message);
-            } finally {
-                roomBulkRunning = false;
-                document.getElementById("roomBulkClose").hidden = false;
-                bulkToggle.disabled = false;
-                bulkToggle.textContent = "⬆ Bulk upload users (CSV / XLSX)";
-            }
+            } catch (err) { /* the list refreshes next time the page loads */ }
+            roomBulkName.textContent = files.length > 1 ? `${files.length} files` : files[0].name;
+            showRoomTotals(totals, files.length);
+            // the bell shows "Members were added to …" (and "Users were created." for new accounts)
+            roomBulkRunning = false;
+            document.getElementById("roomBulkClose").hidden = false;
+            bulkToggle.disabled = false;
+            bulkToggle.textContent = "⬆ Bulk upload users (CSV / XLSX)";
         }
 
         roomJobSummary.addEventListener("click", async event => {
-            const button = event.target.closest("#roomErrorReport");
+            const button = event.target.closest(".room-error-report");
             if (!button) return;
             try {
                 const response = await fetch(`${API_BASE}/admin/jobs/${button.dataset.id}/errors.csv`, { headers: { "Authorization": `Bearer ${token}` } });
