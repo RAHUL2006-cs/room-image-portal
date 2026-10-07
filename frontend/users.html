@@ -1804,7 +1804,7 @@
                 <div class="table-wrapper">
                     <table class="users-table">
                         <thead>
-                            <tr><th class="check-col"><input type="checkbox" id="selectAllHead" aria-label="Select all"></th><th>Email</th><th>College</th><th>Rooms</th><th>Created On</th><th></th></tr>
+                            <tr><th class="check-col"></th><th>Email</th><th>College</th><th>Rooms</th><th>Created On</th><th></th></tr>
                         </thead>
                         <tbody id="usersBody"><tr class="status-row"><td colspan="6">Loading users…</td></tr></tbody>
                     </table>
@@ -2128,7 +2128,6 @@
         const userSelectBar = document.getElementById("userSelectBar");
         const selectAllLabel = document.getElementById("selectAllLabel");
         const selectAllUsers = document.getElementById("selectAllUsers");
-        const selectAllHead = document.getElementById("selectAllHead");
         const deleteSelectedUsers = document.getElementById("deleteSelectedUsers");
 
         function setAllSelected(on) {
@@ -2138,7 +2137,6 @@
             renderUsers();
         }
         selectAllUsers.addEventListener("change", () => setAllSelected(selectAllUsers.checked));
-        selectAllHead.addEventListener("change", () => setAllSelected(selectAllHead.checked));
 
         function updateUserSelectBar() {
             if (allSelected) loadedUsers.forEach(u => selectedUserIds.add(u.id));
@@ -2150,9 +2148,6 @@
             const n = allSelected ? totalUsers : selectedUserIds.size;
             selectAllLabel.hidden = n === 0;
             selectAllUsers.checked = allSelected;
-            selectAllUsers.indeterminate = !allSelected && n > 0;
-            selectAllHead.checked = allSelected;
-            selectAllHead.indeterminate = !allSelected && n > 0;
             document.querySelector(".users-table").classList.toggle("selecting", n > 0);
             document.getElementById("selectedUsersInfo").textContent = n ? `${fmt(n)} selected` : "";
             deleteSelectedUsers.hidden = n === 0;
