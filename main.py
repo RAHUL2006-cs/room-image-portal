@@ -821,8 +821,10 @@ def admin_signup(data: AdminSignupRequest, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="Admin email already registered")
 
     # Online safety: once an admin exists, nobody else can make an admin account from the
-    # sign-up page (set ALLOW_ADMIN_SIGNUP=true to allow more admins for a while)
-    
+    # sign-up page (set ALLOW_ADMIN_SIGNUP=true on Render to allow more admins for a while)
+    if db.query(Admin.id).first() and os.getenv("ALLOW_ADMIN_SIGNUP", "").strip().lower() != "true":
+        raise HTTPException(status_code=403, detail="Admin sign-up is closed. Ask the existing admin for access.")
+
 
     admin = Admin(name=name, email=email, password_hash=hash_password(data.password))
     db.add(admin)
