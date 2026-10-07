@@ -1367,6 +1367,7 @@
             color: #5d4b42;
         }
         .select-bar label { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 600; }
+        .select-bar label[hidden] { display: none; }
         .select-bar input { width: 18px; height: 18px; accent-color: #805035; }
         .select-bar .spacer { flex: 1; }
         .gallery {
@@ -1435,7 +1436,7 @@
         .gallery-zoom {
             position: absolute;
             top: 8px;
-            right: 46px;
+            right: 8px;
             width: 30px;
             height: 30px;
             border: none;
@@ -2638,7 +2639,6 @@
                     <img class="gallery-thumb" src="${item.thumbUrl || item.url}" loading="lazy" alt="" title="${saved ? "Click to select" : ""}">
                     <button type="button" class="gallery-zoom" title="View larger" aria-label="View larger">⤢</button>
                     ${saved ? `<label class="gallery-check-wrap"><input type="checkbox" class="gallery-check" ${checked ? "checked" : ""} aria-label="Select image"></label>` : ""}
-                    <button type="button" class="gallery-delete" title="${saved ? "Delete image" : "Cancel"}" aria-label="Delete image" ${item.status === "uploading" || item.status === "compressing" ? "hidden" : ""}>×</button>
                     <div class="gallery-body">
                         <div class="gallery-name">${item.file ? '<span class="new-badge">New</span> ' : ""}${escapeHTML(item.name || "Image")}</div>
                         <textarea class="image-description" placeholder="Describe this image...">${escapeHTML(item.description)}</textarea>
@@ -3091,7 +3091,9 @@
             gallery.classList.toggle("selecting", n > 0);        // checkboxes show only while selecting
             selectAll.checked = all;
             selectAll.indeterminate = false;
-            deleteSelectedBtn.textContent = all ? `Delete all (${n})` : `Delete (${n})`;
+            selectAll.closest("label").hidden = saved.length < 2;      // only one image: no "Select all"
+            deleteSelectedBtn.textContent = saved.length < 2 ? "Delete"
+                : all ? `Delete all (${n})` : `Delete (${n})`;
         }
 
         selectAll.addEventListener("change", () => {
