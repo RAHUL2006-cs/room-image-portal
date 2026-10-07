@@ -727,7 +727,8 @@ def get_current_admin(token: str = Depends(oauth2_scheme)):
 
 @app.get("/api/health")
 def health():
-    return {"message": "Room Based Image Viewing Portal API is running"}
+    # "version" shows which main.py Render is running (open /api/health in the browser to check)
+    return {"message": "Room Based Image Viewing Portal API is running", "version": "admin-lock-2026-10-07"}
 
 
 # =========================================================
