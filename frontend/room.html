@@ -1245,6 +1245,10 @@
         /* ---------- MEMBERS ---------- */
         .bulk-toggle { width: 100%; margin-bottom: 12px; }
         .room-bulk { margin-bottom: 14px; padding: 14px; border: 1px solid #eadfd8; border-radius: 12px; background: #fffdfb; }
+        .room-bulk-tools { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+        .room-bulk-close { width: 30px; height: 30px; border: none; border-radius: 8px; background: transparent; color: #8d8179; font-size: 20px; line-height: 1; cursor: pointer; }
+        .room-bulk-close:hover { background: #f4ebe5; color: #4d2f20; }
+        .room-bulk-close[hidden] { display: none; }
         .room-bulk-head { display: flex; gap: 10px; align-items: flex-start; justify-content: space-between; margin-bottom: 10px; font-size: 13px; color: #6f5a4d; line-height: 1.45; }
         .link-btn { flex-shrink: 0; border: none; background: none; color: #8b4a26; font-family: inherit; font-size: 13px; font-weight: 700; cursor: pointer; padding: 0; }
         .link-btn:hover { text-decoration: underline; }
@@ -1798,7 +1802,10 @@
                     <div class="room-bulk" id="roomBulk" hidden>
                         <div class="room-bulk-head">
                             <span id="roomBulkName">Columns: <strong>email, college, password</strong> (blank password = default).</span>
-                            <button type="button" class="link-btn" id="roomTemplateBtn">Download template</button>
+                            <span class="room-bulk-tools">
+                                <button type="button" class="link-btn" id="roomTemplateBtn">Download template</button>
+                                <button type="button" class="room-bulk-close" id="roomBulkClose" aria-label="Close" title="Close">×</button>
+                            </span>
                         </div>
                         <input type="file" id="roomBulkFile" class="image-input-hidden" accept=".csv,.xlsx">
                         <div class="job-box" id="roomJobBox" hidden>
@@ -2197,6 +2204,15 @@
         let roomBulkRunning = false;
         const nf = n => Number(n || 0).toLocaleString("en-IN");
 
+        // × closes the bulk upload box (only when no upload is running)
+        document.getElementById("roomBulkClose").addEventListener("click", () => {
+            if (roomBulkRunning) return;
+            roomBulk.hidden = true;
+            roomJobBox.hidden = true;
+            roomJobSummary.hidden = true;
+            roomJobSummary.innerHTML = "";
+        });
+
         // Clicking the button opens the file picker straight away
         bulkToggle.addEventListener("click", () => {
             if (roomBulkRunning) return;
@@ -2248,6 +2264,7 @@
             form.append("room_id", String(ROOM_ID));
             roomBulkRunning = true;
             roomBulk.hidden = false;
+            document.getElementById("roomBulkClose").hidden = true;      // can't close while it's saving
             roomBulkName.textContent = file.name;
             bulkToggle.disabled = true;
             bulkToggle.textContent = "Uploading…";
@@ -2273,6 +2290,7 @@
                 alert(err.message);
             } finally {
                 roomBulkRunning = false;
+                document.getElementById("roomBulkClose").hidden = false;
                 bulkToggle.disabled = false;
                 bulkToggle.textContent = "⬆ Bulk upload users (CSV / XLSX)";
             }
