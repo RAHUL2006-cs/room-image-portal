@@ -1771,6 +1771,7 @@
                         </svg>
                         <span>
                             <strong>Click to add images, or drop them here</strong>
+                            <small>Up to 200 images · JPG, PNG, WEBP or HEIC</small>
                         </span>
                     </label>
                     <input type="file" id="imageInput" class="image-input-hidden" accept="image/*" multiple>
@@ -2570,7 +2571,7 @@
         function renderGallery() {
             const items = currentItems();
             if (!items.length) {
-                gallery.innerHTML = `<div class="empty-box" style="grid-column:1/-1">No images in this subject yet. Add some above.</div>`;
+                gallery.innerHTML = "";          // no images: show nothing
             } else {
                 gallery.innerHTML = items.map(cardHTML).join("");
             }
