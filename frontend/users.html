@@ -1614,6 +1614,14 @@
             .select-bar .spacer { display: none; }
             .select-bar .ghost-btn { flex: 1 1 auto; }
         }
+                /* Checkboxes only show after the first user is selected */
+        .users-table:not(.selecting) .check-col,
+        .users-table:not(.selecting) .cell-check { display: none !important; }
+        .users-table th.check-col input { width: 18px; height: 18px; accent-color: #805035; cursor: pointer; vertical-align: middle; }
+        @media (min-width: 701px) { #selectAllLabel { display: none !important; } }
+        @media (max-width: 700px) {
+            .users-table:not(.selecting) tbody tr { padding-left: 12px !important; }
+        }
     </style>
 </head>
 
@@ -2130,6 +2138,10 @@
             document.getElementById("selectAllLabel").hidden = n === 0;
             selectAllUsers.checked = allSelected;
             selectAllUsers.indeterminate = !allSelected && n > 0;
+            selectAllHead.checked = selectAllUsers.checked;
+            selectAllHead.indeterminate = selectAllUsers.indeterminate;
+            document.querySelector(".users-table").classList.toggle("selecting", n > 0);
+            document.getElementById("selectAllLabel").hidden = n === 0;
             document.getElementById("selectedUsersInfo").textContent = n ? `${fmt(n)} selected` : "";
             deleteSelectedUsers.disabled = n === 0;
             deleteSelectedUsers.textContent = n ? `Delete selected (${fmt(n)})` : "Delete selected";
