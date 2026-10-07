@@ -211,25 +211,36 @@ def notify(db: Session, title: str, message: str = None, link: str = None):
 Base.metadata.create_all(bind=engine)
 
 
-def notify_users(db: Session, count: int, action: str = "created"):
-    """'User was created.' / 'Users were created.' (same for 'deleted').
-    If an unseen notification of the same kind is still waiting, it is merged into one 'Users were ...'"""
+def notify_count(db: Session, noun: str, action: str, count: int, link: str = None, merge_seconds: int = 0):
+    """'<Noun> was <action>.' for one, '<Noun>s were <action>.' for more.
+    An unseen notification of the same kind (or one from the last merge_seconds, e.g. images
+    uploading one by one) is replaced by a single '<Noun>s were <action>.'"""
     if count < 1:
         return
-    kind = action.capitalize()                       # "Created" / "Deleted"
-    titles = [f"User {kind}", f"Users {kind}"]
-    waiting = (db.query(Notification)
-                 .filter(Notification.read == 0, Notification.title.in_(titles))
-                 .order_by(Notification.created_at.desc())
-                 .first())
-    if waiting:
-        waiting.title = f"Users {kind}"
-        waiting.message = f"Users were {action}."
-        waiting.created_at = datetime.utcnow()
-    elif count == 1:
-        notify(db, f"User {kind}", f"User was {action}.", "users.html")
+    kind = action.capitalize()                           # "Created" / "Deleted" / "Uploaded"
+    titles = [f"{noun} {kind}", f"{noun}s {kind}"]
+    same_kind = db.query(Notification).filter(Notification.title.in_(titles))
+    if merge_seconds:
+        since = datetime.utcnow() - timedelta(seconds=merge_seconds)
+        same_kind = same_kind.filter(or_(Notification.read == 0, Notification.created_at >= since))
     else:
-        notify(db, f"Users {kind}", f"Users were {action}.", "users.html")
+        same_kind = same_kind.filter(Notification.read == 0)
+    waiting = same_kind.order_by(Notification.created_at.desc()).first()
+    if waiting:
+        db.delete(waiting)                               # replaced by one combined message
+        count = 2
+    if count == 1:
+        notify(db, f"{noun} {kind}", f"{noun} was {action}.", link)
+    else:
+        notify(db, f"{noun}s {kind}", f"{noun}s were {action}.", link)
+
+
+def notify_users(db: Session, count: int, action: str = "created"):
+    notify_count(db, "User", action, count, "users.html")
+
+
+def notify_images(db: Session, room_id: int, count: int, action: str):
+    notify_count(db, "Image", action, count, f"room.html?id={room_id}#subjects", merge_seconds=60)
 
 
 # The images table may already exist from before, without the new columns.
@@ -1364,6 +1375,7 @@ async def upload_room_image(
 
     full, thumb = compress_image(data, file.filename)
     image = add_image(db, room_id, get_general_subject(db, room_id).id, file.filename, full, thumb, description)
+    notify_images(db, room_id, 1, "uploaded")
     try:
         db.commit()
     except Exception:
@@ -1406,6 +1418,7 @@ async def upload_room_images_bulk(
         for i, (filename, full, thumb) in enumerate(checked):
             description = descriptions[i] if i < len(descriptions) else ""
             images.append(add_image(db, room_id, general_id, filename, full, thumb, description))
+        notify_images(db, room_id, len(images), "uploaded")
         db.commit()
     except Exception:
         # Undo everything if saving failed halfway
@@ -1449,6 +1462,7 @@ def delete_image(
         raise HTTPException(status_code=404, detail="Image not found")
 
     delete_image_file(image.file_path)
+    notify_images(db, image.room_id, 1, "deleted")
     db.delete(image)
     db.commit()
 
@@ -1803,6 +1817,7 @@ async def upload_subject_image(
 
     full, thumb = compress_image(data, file.filename)
     image = add_image(db, subject.room_id, subject.id, file.filename, full, thumb, description)
+    notify_images(db, subject.room_id, 1, "uploaded")
     try:
         db.commit()
     except Exception:
@@ -1827,6 +1842,8 @@ def delete_many_images(
     for image in images:
         delete_image_file(image.file_path)
         db.delete(image)
+    if images:
+        notify_images(db, images[0].room_id, len(images), "deleted")
     db.commit()
     return {"deleted": len(images)}
 

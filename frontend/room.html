@@ -1785,7 +1785,7 @@
                             <small>Select many at once (up to 200), or paste (⌘ + V) · JPG, PNG, WEBP or HEIC, up to 20 MB each · uploads start right away</small>
                         </span>
                     </label>
-                    <input type="file" id="imageInput" class="image-input-hidden" accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.jpg,.jpeg,.png,.webp,.heic,.heif" multiple>
+                    <input type="file" id="imageInput" class="image-input-hidden" accept="image/*" multiple>
                     <div class="upload-summary" id="uploadSummary"></div>
 
                     <div class="select-bar" id="selectBar" hidden>
@@ -2733,7 +2733,8 @@
         function finishedAll() {
             const done = allItems.filter(item => item.status === "done").length;
             const failed = allItems.filter(item => item.status === "failed").length;
-            showToast(failed ? `${done} uploaded · ${failed} failed` : `✓ ${plural(done, "image")} uploaded`);
+            if (failed) showToast(`${done} uploaded · ${failed} failed`);   // all good: the bell shows it
+            window.dispatchEvent(new Event("nb-refresh"));                   // tell the bell to check now
         }
 
         function enqueue(items) {
@@ -2756,7 +2757,8 @@
             let room = MAX_IMAGES_PER_SESSION - busy;
             let overLimit = 0;
             [...files].forEach(file => {
-                const okType = ALLOWED_IMAGE_TYPES.includes(file.type) || ALLOWED_EXTENSIONS.test(file.name);
+                // Android can give odd types ("image/jpg") or names with no extension; the server checks the real contents anyway
+                const okType = ALLOWED_IMAGE_TYPES.includes(file.type) || ALLOWED_EXTENSIONS.test(file.name) || /^image\//.test(file.type) || !file.type;
                 if (!okType) rejected.push(`${file.name} (not a JPG, PNG, WEBP or HEIC image)`);
                 else if (file.size > MAX_IMAGE_SIZE) rejected.push(`${file.name} (larger than ${MAX_IMAGE_MB} MB)`);
                 else if (room <= 0) overLimit++;
@@ -2921,7 +2923,7 @@
                 ids.forEach(id => selectedIds.delete(id));
                 renderGallery();
                 updateSummary();
-                showToast(`${plural(ids.length, "image")} deleted`);
+                // the bell shows this one
             } catch (err) {
                 alert(err.message);
             }
@@ -3430,6 +3432,7 @@
     /* Check right away after this page creates / deletes something, instead of waiting for the next 15-second check */
     const realFetch = window.fetch.bind(window);
     const finishedJobs = new Set();
+    window.addEventListener("nb-refresh", () => setTimeout(() => load(false), 300));   // a page can ask the bell to check now
     window.fetch = async (...args) => {
         const res = await realFetch(...args);
         try {

@@ -1700,6 +1700,7 @@
     /* Check right away after this page creates / deletes something, instead of waiting for the next 15-second check */
     const realFetch = window.fetch.bind(window);
     const finishedJobs = new Set();
+    window.addEventListener("nb-refresh", () => setTimeout(() => load(false), 300));   // a page can ask the bell to check now
     window.fetch = async (...args) => {
         const res = await realFetch(...args);
         try {
