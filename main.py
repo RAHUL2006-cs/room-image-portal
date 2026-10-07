@@ -235,6 +235,32 @@ def notify_count(db: Session, noun: str, action: str, count: int, link: str = No
         notify(db, f"{noun}s {kind}", f"{noun}s were {action}.", link)
 
 
+def notify_members(db: Session, room_id: int, count: int, action: str):
+    """'Member was added to "CSE".' / 'Members were removed from "CSE".'
+    Several adds (or removes) in a row for the same room are joined into one message."""
+    if count < 1:
+        return
+    room = db.query(Room).filter(Room.id == room_id).first()
+    name = room.name if room else "the room"
+    prep = "to" if action == "added" else "from"
+    kind = action.capitalize()                                   # "Added" / "Removed"
+    link = f"room.html?id={room_id}"
+    since = datetime.utcnow() - timedelta(seconds=60)
+    waiting = (db.query(Notification)
+                 .filter(Notification.title.in_([f"Member {kind}", f"Members {kind}"]),
+                         Notification.link == link,
+                         or_(Notification.read == 0, Notification.created_at >= since))
+                 .order_by(Notification.created_at.desc())
+                 .first())
+    if waiting:
+        db.delete(waiting)                                       # replaced by one combined message
+        count = 2
+    if count == 1:
+        notify(db, f"Member {kind}", f'Member was {action} {prep} "{name}".', link)
+    else:
+        notify(db, f"Members {kind}", f'Members were {action} {prep} "{name}".', link)
+
+
 def notify_users(db: Session, count: int, action: str = "created"):
     notify_count(db, "User", action, count, "users.html")
 
@@ -1953,6 +1979,7 @@ def add_room_members(
     new_ids = [uid for uid in user_ids if uid not in existing]
     for uid in new_ids:
         db.add(RoomUser(room_id=room_id, user_id=uid))
+    notify_members(db, room_id, len(new_ids), "added")
     db.commit()
     return {"added": len(new_ids)}
 
@@ -1978,6 +2005,7 @@ def remove_room_members(
             return {"removed": 0}
         query = query.filter(RoomUser.user_id.in_(ids))
     removed = query.delete(synchronize_session=False)
+    notify_members(db, room_id, removed, "removed")
     db.commit()
     return {"removed": removed}
 
@@ -1995,9 +2023,10 @@ def remove_room_member(
         .filter(RoomUser.room_id == room_id, RoomUser.user_id == user_id)
         .delete(synchronize_session=False)
     )
-    db.commit()
     if not removed:
         raise HTTPException(status_code=404, detail="This user is not in the room")
+    notify_members(db, room_id, 1, "removed")
+    db.commit()
     return {"message": "Removed from the room"}
 
 
@@ -2235,6 +2264,7 @@ def run_user_import(job_id: int, rows: List[dict], room_id: Optional[int]):
                 db.commit()
             job.existing_added = len(to_add)
             job.existing_already = len(existing_ids) - len(to_add)
+            notify_members(db, room_id, len(to_add), "added")
             db.commit()
 
         # 2. Hash the passwords (bcrypt is slow on purpose, so it runs in parallel)
@@ -2280,6 +2310,8 @@ def run_user_import(job_id: int, rows: List[dict], room_id: Optional[int]):
             job.error_report = out.getvalue()
         job.status = "done"
         notify_users(db, job.succeeded or 0, "created")
+        if room_id:
+            notify_members(db, room_id, job.succeeded or 0, "added")   # the new users also joined the room
         db.commit()
     except Exception as exc:
         db.rollback()

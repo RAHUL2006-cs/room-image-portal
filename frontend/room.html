@@ -2267,7 +2267,7 @@
                 room.users = fresh.users;
                 members = fresh.users;
                 renderMembers();
-                if (!job.created) showToast(`${nf(job.existing_added || 0)} added to ${room.name}`);   // new users: the bell shows it
+                // the bell shows "Members were added to …" (and "Users were created." for new accounts)
             } catch (err) {
                 document.getElementById("roomJobText").textContent = err.message;
                 alert(err.message);
@@ -2339,7 +2339,7 @@
                 }
                 selectedMembers.clear();
                 renderMembers();
-                showToast(`${result.removed.toLocaleString("en-IN")} ${result.removed === 1 ? "member" : "members"} removed from ${room.name}`);
+                // the bell shows "Member(s) … removed from …"
             } catch (err) {
                 alert(err.message);
             }
@@ -2445,7 +2445,7 @@
                 if (inRoom) {
                     await api(`/admin/rooms/${ROOM_ID}/members/${user.id}`, { method: "DELETE" });
                     members = members.filter(u => u.id !== user.id);
-                    showToast(`${user.name} removed from ${room.name}`);
+                    // the bell shows "Member was removed from …"
                 } else {
                     await api(`/admin/rooms/${ROOM_ID}/members`, {
                         method: "POST",
@@ -2453,7 +2453,7 @@
                     });
                     members.push(user);
                     members.sort((a, b) => a.name.localeCompare(b.name));
-                    showToast(`${user.name} added to ${room.name}`);
+                    // the bell shows "Member was added to …"
                 }
                 renderMembers();
                 renderFoundUsers(lastFoundTotal);
