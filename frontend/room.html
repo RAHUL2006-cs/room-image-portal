@@ -1391,6 +1391,25 @@
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
         }
         .gallery-delete:hover { background: #fdecec; }
+        /* Checkboxes only show after the first image is selected (same as the users page) */
+        .gallery:not(.selecting) .gallery-check-wrap { display: none; }
+        .gallery-card .gallery-thumb { cursor: pointer; }
+        .gallery-zoom {
+            position: absolute;
+            top: 8px;
+            right: 46px;
+            width: 30px;
+            height: 30px;
+            border: none;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.92);
+            color: #5d4b42;
+            font-size: 16px;
+            line-height: 1;
+            cursor: zoom-in;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+        }
+        .gallery-zoom:hover { background: #f4ebe5; }
         .gallery-body { display: flex; flex-direction: column; gap: 6px; padding: 10px; }
         .gallery-name {
             font-size: 12px;
@@ -1779,9 +1798,8 @@
 
                     <div class="select-bar" id="selectBar" hidden>
                         <label><input type="checkbox" id="selectAll"> Select all</label>
-                        <span id="selectedInfo"></span>
                         <span class="spacer"></span>
-                        <button type="button" class="ghost-btn danger" id="deleteSelectedBtn" disabled>Delete selected</button>
+                        <button type="button" class="ghost-btn danger solid" id="deleteSelectedBtn">Delete</button>
                     </div>
                     <div class="gallery" id="gallery"></div>
                 </div>
@@ -2464,7 +2482,6 @@
         const uploadSummary = document.getElementById("uploadSummary");
         const selectBar = document.getElementById("selectBar");
         const selectAll = document.getElementById("selectAll");
-        const selectedInfo = document.getElementById("selectedInfo");
         const deleteSelectedBtn = document.getElementById("deleteSelectedBtn");
 
         // PRD 4.4: JPG, JPEG, PNG, WEBP (+ HEIC from iPhones). The server checks the real file too.
@@ -2553,7 +2570,8 @@
             const checked = saved && selectedIds.has(item.id);
             return `
                 <div class="gallery-card${checked ? " selected" : ""}${item.status === "failed" ? " failed" : ""}" data-key="${item.key}">
-                    <img class="gallery-thumb" src="${item.thumbUrl || item.url}" loading="lazy" alt="" title="Click to zoom">
+                    <img class="gallery-thumb" src="${item.thumbUrl || item.url}" loading="lazy" alt="" title="${saved ? "Click to select" : ""}">
+                    <button type="button" class="gallery-zoom" title="View larger" aria-label="View larger">⤢</button>
                     ${saved ? `<label class="gallery-check-wrap"><input type="checkbox" class="gallery-check" ${checked ? "checked" : ""} aria-label="Select image"></label>` : ""}
                     <button type="button" class="gallery-delete" title="${saved ? "Delete image" : "Cancel"}" aria-label="Delete image" ${item.status === "uploading" || item.status === "compressing" ? "hidden" : ""}>×</button>
                     <div class="gallery-body">
@@ -2851,7 +2869,16 @@
                 }
                 if (!confirm(`Delete "${item.name}"?\n\nThis can't be undone.`)) return;
                 await deleteImages([item.id]);
-            } else if (event.target.closest(".gallery-thumb")) {
+            } else if (event.target.closest(".gallery-thumb") && !item.file && item.id) {
+                // Clicking the image ticks it (same as clicking a user's row)
+                if (selectedIds.has(item.id)) selectedIds.delete(item.id);
+                else selectedIds.add(item.id);
+                const card = event.target.closest(".gallery-card");
+                card.classList.toggle("selected", selectedIds.has(item.id));
+                const box = card.querySelector(".gallery-check");
+                if (box) box.checked = selectedIds.has(item.id);
+                updateSelectBar();
+            } else if (event.target.closest(".gallery-zoom") || event.target.closest(".gallery-thumb")) {
                 const items = currentItems();
                 const subject = subjects.find(sub => sub.id === currentSubjectId);
                 openViewer(
@@ -2876,13 +2903,13 @@
         function updateSelectBar() {
             const saved = savedInSubject();
             [...selectedIds].forEach(id => { if (!saved.some(item => item.id === id)) selectedIds.delete(id); });
-            selectBar.hidden = saved.length === 0;
             const n = selectedIds.size;
-            selectAll.checked = n > 0 && n === saved.length;
-            selectAll.indeterminate = n > 0 && n < saved.length;
-            selectedInfo.textContent = n ? `${n} selected` : "";
-            deleteSelectedBtn.disabled = n === 0;
-            deleteSelectedBtn.textContent = n ? `Delete selected (${n})` : "Delete selected";
+            const all = n > 0 && n === saved.length;
+            selectBar.hidden = n === 0;                          // shows after the first image is selected
+            gallery.classList.toggle("selecting", n > 0);        // checkboxes show only while selecting
+            selectAll.checked = all;
+            selectAll.indeterminate = false;
+            deleteSelectedBtn.textContent = all ? `Delete all (${n})` : `Delete (${n})`;
         }
 
         selectAll.addEventListener("change", () => {
