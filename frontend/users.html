@@ -1729,7 +1729,6 @@
                     <div class="panel-head">
                         <div>
                             <h2>Add a user</h2>
-                            <p>Email, college and password. The password starts as the default.</p>
                         </div>
                     </div>
                     <form id="addUserForm" autocomplete="off">
@@ -1757,7 +1756,6 @@
                     <div class="panel-head">
                         <div>
                             <h2>Bulk upload</h2>
-                            <p>CSV or XLSX with columns <strong>email, college, password</strong>. Blank password = default password.</p>
                         </div>
                         <button type="button" class="ghost-btn" id="templateBtn">Download template</button>
                     </div>
@@ -1767,8 +1765,8 @@
                             <path d="M14 3v6h6"/><path d="M12 18v-6"/><path d="m9 15 3-3 3 3"/>
                         </svg>
                         <span>
-                            <strong id="bulkFileName">Click to choose a file, or drop it here</strong>
-                            <small>.csv or .xlsx · thousands of users are fine (saved 500 at a time)</small>
+                            <strong id="bulkFileName">Click to choose a file</strong>
+                            <small>.csv or .xlsx</small>
                         </span>
                     </label>
                     <input type="file" id="bulkFile" class="image-input-hidden" accept=".csv,.xlsx">
@@ -2063,7 +2061,7 @@
             } finally {
                 jobRunning = false;
                 chosenFile = null;
-                bulkFileName.textContent = "Click to choose a file, or drop it here";
+                bulkFileName.textContent = "Click to choose a file";
                 bulkUploadBtn.textContent = "Upload users";
                 bulkUploadBtn.disabled = true;
             }
