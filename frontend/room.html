@@ -3094,16 +3094,8 @@ function renderGallery() {
         }
 
         // "change" is the normal event; some phone browsers only send "input"
-       function onImagesPicked() {
-    alert("PICKED!");
-    
-    if (!imageInput.files || !imageInput.files.length) {
-        alert("NO FILES");
-        return;
-    }
-
-    alert("FILES: " + imageInput.files.length);
-
+function onImagesPicked() {
+    if (!imageInput.files || !imageInput.files.length) return;
     const files = [...imageInput.files];
     imageInput.value = "";
     addImageFiles(files);
