@@ -3094,12 +3094,20 @@ function renderGallery() {
         }
 
         // "change" is the normal event; some phone browsers only send "input"
-        function onImagesPicked() {
-            if (!imageInput.files || !imageInput.files.length) return;
-            const files = [...imageInput.files];       // copy first, then clear so the same photos can be picked again
-            imageInput.value = "";
-            addImageFiles(files);
-        }
+       function onImagesPicked() {
+    alert("PICKED!");
+    
+    if (!imageInput.files || !imageInput.files.length) {
+        alert("NO FILES");
+        return;
+    }
+
+    alert("FILES: " + imageInput.files.length);
+
+    const files = [...imageInput.files];
+    imageInput.value = "";
+    addImageFiles(files);
+}
         imageInput.addEventListener("change", onImagesPicked);
         imageInput.addEventListener("input", onImagesPicked);
         ["dragenter", "dragover"].forEach(type => imageDrop.addEventListener(type, event => {
