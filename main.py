@@ -211,62 +211,25 @@ def notify(db: Session, title: str, message: str = None, link: str = None):
 Base.metadata.create_all(bind=engine)
 
 
-def notify_count(db: Session, noun: str, action: str, count: int, link: str = None, merge_seconds: int = 0):
-    """'<Noun> was <action>.' for one, '<Noun>s were <action>.' for more.
-    An unseen notification of the same kind (or one from the last merge_seconds, e.g. images
-    uploading one by one) is replaced by a single '<Noun>s were <action>.'"""
+def notify_users(db: Session, count: int, action: str = "created"):
+    """'User was created.' / 'Users were created.' (same for 'deleted').
+    If an unseen notification of the same kind is still waiting, it is merged into one 'Users were ...'"""
     if count < 1:
         return
-    kind = action.capitalize()                           # "Created" / "Deleted" / "Uploaded"
-    titles = [f"{noun} {kind}", f"{noun}s {kind}"]
-    same_kind = db.query(Notification).filter(Notification.title.in_(titles))
-    if merge_seconds:
-        since = datetime.utcnow() - timedelta(seconds=merge_seconds)
-        same_kind = same_kind.filter(or_(Notification.read == 0, Notification.created_at >= since))
-    else:
-        same_kind = same_kind.filter(Notification.read == 0)
-    waiting = same_kind.order_by(Notification.created_at.desc()).first()
-    if waiting:
-        db.delete(waiting)                               # replaced by one combined message
-        count = 2
-    if count == 1:
-        notify(db, f"{noun} {kind}", f"{noun} was {action}.", link)
-    else:
-        notify(db, f"{noun}s {kind}", f"{noun}s were {action}.", link)
-
-
-def notify_members(db: Session, room_id: int, count: int, action: str):
-    """'Member was added to "CSE".' / 'Members were removed from "CSE".'
-    Several adds (or removes) in a row for the same room are joined into one message."""
-    if count < 1:
-        return
-    room = db.query(Room).filter(Room.id == room_id).first()
-    name = room.name if room else "the room"
-    prep = "to" if action == "added" else "from"
-    kind = action.capitalize()                                   # "Added" / "Removed"
-    link = f"room.html?id={room_id}"
-    since = datetime.utcnow() - timedelta(seconds=60)
+    kind = action.capitalize()                       # "Created" / "Deleted"
+    titles = [f"User {kind}", f"Users {kind}"]
     waiting = (db.query(Notification)
-                 .filter(Notification.title.in_([f"Member {kind}", f"Members {kind}"]),
-                         Notification.link == link,
-                         or_(Notification.read == 0, Notification.created_at >= since))
+                 .filter(Notification.read == 0, Notification.title.in_(titles))
                  .order_by(Notification.created_at.desc())
                  .first())
     if waiting:
-        db.delete(waiting)                                       # replaced by one combined message
-        count = 2
-    if count == 1:
-        notify(db, f"Member {kind}", f'Member was {action} {prep} "{name}".', link)
+        waiting.title = f"Users {kind}"
+        waiting.message = f"Users were {action}."
+        waiting.created_at = datetime.utcnow()
+    elif count == 1:
+        notify(db, f"User {kind}", f"User was {action}.", "users.html")
     else:
-        notify(db, f"Members {kind}", f'Members were {action} {prep} "{name}".', link)
-
-
-def notify_users(db: Session, count: int, action: str = "created"):
-    notify_count(db, "User", action, count, "users.html")
-
-
-def notify_images(db: Session, room_id: int, count: int, action: str):
-    notify_count(db, "Image", action, count, f"room.html?id={room_id}#subjects", merge_seconds=60)
+        notify(db, f"Users {kind}", f"Users were {action}.", "users.html")
 
 
 # The images table may already exist from before, without the new columns.
@@ -563,6 +526,10 @@ class ImageIdsRequest(BaseModel):
     ids: List[int]
 
 
+class ImageCountRequest(BaseModel):
+    count: int
+
+
 # =========================================================
 # PASSWORD HASHING
 # =========================================================
@@ -727,8 +694,7 @@ def get_current_admin(token: str = Depends(oauth2_scheme)):
 
 @app.get("/api/health")
 def health():
-    # "version" shows which main.py Render is running (open /api/health in the browser to check)
-    return {"message": "Room Based Image Viewing Portal API is running", "version": "admin-lock-2026-10-07"}
+    return {"message": "Room Based Image Viewing Portal API is running"}
 
 
 # =========================================================
@@ -822,10 +788,8 @@ def admin_signup(data: AdminSignupRequest, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="Admin email already registered")
 
     # Online safety: once an admin exists, nobody else can make an admin account from the
-    # sign-up page (set ALLOW_ADMIN_SIGNUP=true on Render to allow more admins for a while)
-    if db.query(Admin.id).first() and os.getenv("ALLOW_ADMIN_SIGNUP", "").strip().lower() != "true":
-        raise HTTPException(status_code=403, detail="Admin sign-up is closed. Ask the existing admin for access.")
-
+    # sign-up page (set ALLOW_ADMIN_SIGNUP=true to allow more admins for a while)
+    
 
     admin = Admin(name=name, email=email, password_hash=hash_password(data.password))
     db.add(admin)
@@ -1404,7 +1368,6 @@ async def upload_room_image(
 
     full, thumb = compress_image(data, file.filename)
     image = add_image(db, room_id, get_general_subject(db, room_id).id, file.filename, full, thumb, description)
-    notify_images(db, room_id, 1, "uploaded")
     try:
         db.commit()
     except Exception:
@@ -1447,7 +1410,6 @@ async def upload_room_images_bulk(
         for i, (filename, full, thumb) in enumerate(checked):
             description = descriptions[i] if i < len(descriptions) else ""
             images.append(add_image(db, room_id, general_id, filename, full, thumb, description))
-        notify_images(db, room_id, len(images), "uploaded")
         db.commit()
     except Exception:
         # Undo everything if saving failed halfway
@@ -1491,7 +1453,6 @@ def delete_image(
         raise HTTPException(status_code=404, detail="Image not found")
 
     delete_image_file(image.file_path)
-    notify_images(db, image.room_id, 1, "deleted")
     db.delete(image)
     db.commit()
 
@@ -1846,7 +1807,6 @@ async def upload_subject_image(
 
     full, thumb = compress_image(data, file.filename)
     image = add_image(db, subject.room_id, subject.id, file.filename, full, thumb, description)
-    notify_images(db, subject.room_id, 1, "uploaded")
     try:
         db.commit()
     except Exception:
@@ -1855,6 +1815,25 @@ async def upload_subject_image(
         raise HTTPException(status_code=500, detail="Couldn't save the image. Please try again.")
     db.refresh(image)
     return image_to_dict(image)
+
+
+@app.post("/admin/subjects/{subject_id}/images/uploaded")
+def report_images_uploaded(
+    subject_id: int,
+    data: ImageCountRequest,
+    current_admin: int = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    """The page calls this once when a batch of uploads finishes, so the bell shows one notification."""
+    subject = get_subject_or_404(db, subject_id)
+    count = data.count
+    if count > 0:
+        word = "image" if count == 1 else "images"
+        notify(db, "Images Uploaded",
+               f'{count} {word} uploaded to "{subject.name}".',
+               f"room.html?id={subject.room_id}#subject/{subject.id}")
+        db.commit()
+    return {"ok": True}
 
 
 @app.delete("/admin/images")
@@ -1868,11 +1847,24 @@ def delete_many_images(
     if not ids:
         return {"deleted": 0}
     images = db.query(Image).filter(Image.id.in_(ids)).all()
+    subject_ids = {image.subject_id for image in images}
+    room_ids = {image.room_id for image in images}
     for image in images:
         delete_image_file(image.file_path)
         db.delete(image)
     if images:
-        notify_images(db, images[0].room_id, len(images), "deleted")
+        count = len(images)
+        word = "image" if count == 1 else "images"
+        subject = None
+        if len(subject_ids) == 1:
+            subject = db.query(Subject).filter(Subject.id == next(iter(subject_ids))).first()
+        if subject:
+            notify(db, "Images Deleted",
+                   f'{count} {word} deleted from "{subject.name}".',
+                   f"room.html?id={subject.room_id}#subject/{subject.id}")
+        else:
+            notify(db, "Images Deleted", f"{count} {word} deleted.",
+                   f"room.html?id={next(iter(room_ids))}#subjects" if len(room_ids) == 1 else None)
     db.commit()
     return {"deleted": len(images)}
 
@@ -1982,7 +1974,6 @@ def add_room_members(
     new_ids = [uid for uid in user_ids if uid not in existing]
     for uid in new_ids:
         db.add(RoomUser(room_id=room_id, user_id=uid))
-    notify_members(db, room_id, len(new_ids), "added")
     db.commit()
     return {"added": len(new_ids)}
 
@@ -2008,7 +1999,6 @@ def remove_room_members(
             return {"removed": 0}
         query = query.filter(RoomUser.user_id.in_(ids))
     removed = query.delete(synchronize_session=False)
-    notify_members(db, room_id, removed, "removed")
     db.commit()
     return {"removed": removed}
 
@@ -2026,10 +2016,9 @@ def remove_room_member(
         .filter(RoomUser.room_id == room_id, RoomUser.user_id == user_id)
         .delete(synchronize_session=False)
     )
+    db.commit()
     if not removed:
         raise HTTPException(status_code=404, detail="This user is not in the room")
-    notify_members(db, room_id, 1, "removed")
-    db.commit()
     return {"message": "Removed from the room"}
 
 
@@ -2075,9 +2064,94 @@ class CreateUserRequest(BaseModel):
     password: Optional[str] = None           # blank = default password
 
 
+class DefaultPasswordRequest(BaseModel):
+    password: str
+
+
 @app.get("/admin/settings")
 def read_settings(current_admin: int = Depends(get_current_admin), db: Session = Depends(get_db)):
     return {"default_password": get_default_password(db)}
+
+
+@app.put("/admin/settings/default-password")
+def set_default_password(
+    data: DefaultPasswordRequest,
+    current_admin: int = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    password = data.password.strip()
+    if len(password) < 6:
+        raise HTTPException(status_code=400, detail="The default password needs at least 6 characters")
+    row = db.query(Setting).filter(Setting.key == "default_password").first()
+    if row:
+        row.value = password
+    else:
+        db.add(Setting(key="default_password", value=password))
+    db.commit()
+    return {"default_password": password}
+
+
+# =========================================================
+# ADMINS (Settings page: list, add, remove)
+# =========================================================
+
+def admin_to_dict(admin: Admin, current_admin: int):
+    return {
+        "id": admin.id,
+        "name": admin.name,
+        "email": admin.email,
+        "created_at": admin.created_at,
+        "is_me": admin.id == current_admin,
+    }
+
+
+@app.get("/admin/admins")
+def list_admins(current_admin: int = Depends(get_current_admin), db: Session = Depends(get_db)):
+    admins = db.query(Admin).order_by(Admin.created_at, Admin.id).all()
+    return [admin_to_dict(a, current_admin) for a in admins]
+
+
+@app.post("/admin/admins", status_code=201)
+def add_admin(
+    data: AdminSignupRequest,
+    current_admin: int = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    name = data.name.strip()
+    email = data.email.strip().lower()
+    password = data.password.strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="Enter the admin's name")
+    if len(password) < 6:
+        raise HTTPException(status_code=400, detail="The password needs at least 6 characters")
+    if db.query(Admin).filter(func.lower(Admin.email) == email).first():
+        raise HTTPException(status_code=400, detail="An admin with this email already exists")
+
+    admin = Admin(name=name, email=email, password_hash=hash_password(password))
+    db.add(admin)
+    notify(db, "Admin Added", "Admin was added.", "settings.html")
+    db.commit()
+    db.refresh(admin)
+    return admin_to_dict(admin, current_admin)
+
+
+@app.delete("/admin/admins/{admin_id}")
+def remove_admin(
+    admin_id: int,
+    current_admin: int = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    if admin_id == current_admin:
+        raise HTTPException(status_code=400, detail="You can't remove yourself")
+    admin = db.query(Admin).filter(Admin.id == admin_id).first()
+    if not admin:
+        raise HTTPException(status_code=404, detail="Admin not found")
+    if db.query(Admin).count() <= 1:
+        raise HTTPException(status_code=400, detail="There must be at least one admin")
+    db.delete(admin)
+    notify(db, "Admin Removed", "Admin was removed.", "settings.html")
+    db.commit()
+    return {"message": "Admin removed"}
 
 
 @app.get("/admin/users/list")
@@ -2267,7 +2341,6 @@ def run_user_import(job_id: int, rows: List[dict], room_id: Optional[int]):
                 db.commit()
             job.existing_added = len(to_add)
             job.existing_already = len(existing_ids) - len(to_add)
-            notify_members(db, room_id, len(to_add), "added")
             db.commit()
 
         # 2. Hash the passwords (bcrypt is slow on purpose, so it runs in parallel)
@@ -2313,8 +2386,6 @@ def run_user_import(job_id: int, rows: List[dict], room_id: Optional[int]):
             job.error_report = out.getvalue()
         job.status = "done"
         notify_users(db, job.succeeded or 0, "created")
-        if room_id:
-            notify_members(db, room_id, job.succeeded or 0, "added")   # the new users also joined the room
         db.commit()
     except Exception as exc:
         db.rollback()
@@ -2449,7 +2520,7 @@ else:
     # The .html pages were uploaded next to main.py (no "frontend" folder).
     # Serve ONLY these pages, so main.py / .env etc. can never be downloaded.
     PAGES = {"index.html", "login.html", "signup.html", "dashboard.html", "room.html",
-             "users.html", "user_dashboard.html"}
+             "users.html", "settings.html", "user_dashboard.html"}
 
     @app.get("/", include_in_schema=False)
     def home_page():
