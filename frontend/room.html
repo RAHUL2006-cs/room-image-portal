@@ -2867,13 +2867,13 @@
                 </div>`;
         }
 
-        function renderGallery() {
-            // Only saved images go in the Images section; uploads show in the summary line
-            gallery.innerHTML = savedInSubject().map(cardHTML).join("");
-            updateImagesPanel();
-            updateSelectBar();
-            updateSubjectCount();
-        }
+function renderGallery() {
+    // Show both saved images and newly selected/uploading images
+    gallery.innerHTML = currentItems().map(cardHTML).join("");
+    updateImagesPanel();
+    updateSelectBar();
+    updateSubjectCount();
+}
 
         /* Keeps the "N images" text and the subject card count right */
         function updateSubjectCount() {
