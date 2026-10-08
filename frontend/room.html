@@ -1715,6 +1715,14 @@
         .member-box .members-toggle { margin-left: auto; width: 34px; height: 34px; }
         .user-option .user-checkbox { pointer-events: none; }
         @media (max-width: 700px) { .member-box .members-toggle { width: 44px; height: 44px; } }
+        .member-box { cursor: pointer; padding-top: 8px; padding-bottom: 8px; }
+        .member-empty { flex: 1; color: #aaa09a; font-size: 15px; }
+        .member-box .user-chip { cursor: pointer; }
+        .member-box .user-chip:hover { background: #ecdacd; }
+        .chip-more { border: none; background: none; padding: 4px 6px; border-radius: 8px; font-family: inherit; font-size: 13px; font-weight: 700; color: #7a5a47; cursor: pointer; }
+        .chip-more:hover { background: #f4e7de; }
+        .dropdown-search { padding: 10px; border-bottom: 1px solid #eee5df; background: #fffdfb; }
+        .member-add .dropdown-search .room-input { height: 42px; padding-left: 14px; }
     </style>
 </head>
 
@@ -1845,15 +1853,18 @@
                             </svg>
                             <div class="member-box" id="memberBox">
                                 <span class="member-chips" id="memberChips"></span>
-                                <input type="text" id="addUserInput" class="member-input" placeholder="Add users: search by name, email or college…" autocomplete="off">
-                                <button type="button" class="members-toggle" id="membersToggle" hidden aria-expanded="false" title="Show members" aria-label="Show members">
+                                <span class="member-empty" id="memberEmpty">Add users</span>
+                                <button type="button" class="members-toggle" id="membersToggle" aria-expanded="false" title="Show users to add" aria-label="Show users to add">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
                                 </button>
                             </div>
                             <div class="user-dropdown" id="userDropdown">
+                                <div class="dropdown-search">
+                                    <input type="text" id="addUserInput" class="room-input" placeholder="Search users by name, email or college…" autocomplete="off">
+                                </div>
                                 <div class="user-list" id="userList"></div>
                                 <div class="user-dropdown-footer">
-                                    <span>Click to add · click again to remove</span>
+                                    <span>Click a user to add them</span>
                                     <span id="userDisplayCount"></span>
                                 </div>
                             </div>
@@ -2234,24 +2245,30 @@
         const PAGE = 100;               // members drawn at a time (rooms can have thousands)
         let membersShown = PAGE;
 
-        /* Show / hide the member list with the arrow button in the Members bar */
+        /* Members bar: chips of the room's users, a count, and the arrow.
+           Arrow (or the empty bar) = list of users who can still be added (with search).
+           Count / a chip = show or hide the users already in the room. */
         const membersToggle = document.getElementById("membersToggle");
         const memberChips = document.getElementById("memberChips");
-        // clicking anywhere in the bar (not the arrow) puts the cursor in the search box
-        document.getElementById("memberBox").addEventListener("click", event => {
-            if (!event.target.closest("#membersToggle")) document.getElementById("addUserInput").focus();
-        });
+        const memberEmpty = document.getElementById("memberEmpty");
         let membersOpen = false;
         function setMembersOpen(open) {
             membersOpen = open;
-            membersToggle.classList.toggle("open", open);
-            membersToggle.setAttribute("aria-expanded", String(open));
-            membersToggle.title = membersToggle.ariaLabel = open ? "Hide members" : "Show members";
+            if (!open) selectedMembers.clear();                     // closing the list also clears the selection
         }
-        membersToggle.addEventListener("click", () => {
-            setMembersOpen(!membersOpen);
-            if (!membersOpen) selectedMembers.clear();             // closing the list also clears the selection
-            renderMembers();
+        document.getElementById("memberBox").addEventListener("click", event => {
+            if (event.target.closest(".user-chip, .chip-more")) {   // the count or a chip: the room's users
+                closeUserDropdown();
+                setMembersOpen(!membersOpen);
+                renderMembers();
+                return;
+            }
+            if (userDropdown.classList.contains("active")) closeUserDropdown();   // arrow / bar: users to add
+            else {
+                openUserDropdown();
+                searchUsers(addUserInput.value.trim());
+                addUserInput.focus();
+            }
         });
 
         function renderMembers() {
@@ -2272,16 +2289,14 @@
             }
             const CHIPS = 3;
             memberChips.innerHTML = members.slice(0, CHIPS).map(u => `
-                <span class="user-chip" title="${escapeHTML(u.email)}">
+                <span class="user-chip" title="${escapeHTML(u.email)} · click to see the room's users">
                     <span class="user-chip-avatar">${escapeHTML(u.name.charAt(0).toUpperCase())}</span>
                     <span class="user-chip-name">${escapeHTML(u.name)}</span>
                 </span>`).join("")
-                + (members.length > CHIPS ? `<span class="chip-more">+${(members.length - CHIPS).toLocaleString("en-IN")} more</span>` : "");
-            document.getElementById("addUserInput").placeholder = members.length
-                ? "Add users…" : "Add users: search by name, email or college…";   // shorter when chips fill the bar
-            membersToggle.hidden = !members.length;                 // the button shows once the room has members
+                + (members.length > CHIPS ? `<button type="button" class="chip-more" title="See the room's users">+${(members.length - CHIPS).toLocaleString("en-IN")} more</button>` : "");
+            memberEmpty.hidden = members.length > 0;               // "Add users" only while the room is empty
             if (!members.length) setMembersOpen(false);
-            memberList.hidden = !membersOpen;                       // members show only after clicking the button
+            memberList.hidden = !membersOpen;                       // the room's users show after clicking the count / a chip
             showMoreMembers.hidden = !membersOpen || list.length <= membersShown;
             showMoreMembers.textContent = `Show more (${(list.length - membersShown).toLocaleString("en-IN")} left)`;
             document.getElementById("memberCount").textContent = members.length.toLocaleString("en-IN");
@@ -2514,11 +2529,16 @@
         let userSearchTimer = null;
         let userSearchRequest = 0;
 
-        function openUserDropdown() { userDropdown.classList.add("active"); }
-        function closeUserDropdown() { userDropdown.classList.remove("active"); }
+        function setArrow(open) {
+            membersToggle.classList.toggle("open", open);
+            membersToggle.setAttribute("aria-expanded", String(open));
+        }
+        function openUserDropdown() { userDropdown.classList.add("active"); setArrow(true); }
+        function closeUserDropdown() { userDropdown.classList.remove("active"); setArrow(false); }
 
         function renderFoundUsers(total) {
             const memberIds = new Set(members.map(u => u.id));
+            foundUsers = foundUsers.filter(u => !memberIds.has(u.id));   // only users who can still be added
             if (!foundUsers.length) {
                 userList.innerHTML = `<div class="user-list-empty">No users found.</div>`;
             } else {
@@ -2543,7 +2563,7 @@
         async function searchUsers(search = "") {
             const requestId = ++userSearchRequest;
             try {
-                const query = `?limit=20${search ? `&search=${encodeURIComponent(search)}` : ""}`;
+                const query = `?limit=20&exclude_room=${ROOM_ID}${search ? `&search=${encodeURIComponent(search)}` : ""}`;
                 const data = await api(`/admin/users${query}`);
                 if (requestId !== userSearchRequest) return;
                 foundUsers = data.users;
@@ -2555,7 +2575,6 @@
             }
         }
 
-        addUserInput.addEventListener("focus", () => { openUserDropdown(); searchUsers(addUserInput.value.trim()); });
         addUserInput.addEventListener("input", () => {
             openUserDropdown();
             clearTimeout(userSearchTimer);
@@ -2590,7 +2609,7 @@
                     // the bell shows "Member was added to …"
                 }
                 renderMembers();
-                renderFoundUsers(lastFoundTotal);
+                searchUsers(addUserInput.value.trim());
             } catch (err) {
                 alert(err.message);
             } finally {

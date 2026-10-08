@@ -1313,11 +1313,15 @@ def delete_room(
 def list_users(
     search: Optional[str] = None,
     limit: int = 20,
+    exclude_room: Optional[int] = None,       # leave out users already in this room
     current_admin: int = Depends(get_current_admin),
     db: Session = Depends(get_db)
 ):
     limit = max(1, min(limit, 100))
     query = db.query(User)
+    if exclude_room:
+        in_room = db.query(RoomUser.user_id).filter(RoomUser.room_id == exclude_room)
+        query = query.filter(~User.id.in_(in_room))
 
     if search and search.strip():
         term = f"%{search.strip()}%"
@@ -2429,9 +2433,7 @@ async def bulk_upload_users(
 ):
     if room_id and not db.query(Room.id).filter(Room.id == room_id).first():
         raise HTTPException(status_code=404, detail="Room not found")
-    data = await file.read()
-    if len(data) > 20 * 1024 * 1024:
-        raise HTTPException(status_code=400, detail="The file is larger than 20 MB")
+    data = await file.read()          # PRD: one file of any size (no size limit)
     rows = read_rows(file.filename, data)
     if not rows:
         raise HTTPException(status_code=400, detail="The file has a header but no users")
