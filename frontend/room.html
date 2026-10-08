@@ -3534,15 +3534,41 @@
         let drag = null;
         let justDragged = false;
 
+        /* Two fingers on a phone: pinch to zoom (and move) */
+        const fingers = new Map();
+        let pinch = null;
+        const fingerGap = () => { const [a, b] = [...fingers.values()]; return Math.hypot(a.x - b.x, a.y - b.y); };
+        const fingerMid = () => { const [a, b] = [...fingers.values()]; return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }; };
         viewerStage.addEventListener("pointerdown", function (event) {
-            if (event.target.closest(".viewer-nav") || zoom === MIN_ZOOM) return;
+            if (event.pointerType !== "touch") return;
+            fingers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+            if (fingers.size === 2) { endDrag(); pinch = { gap: fingerGap(), zoom, mid: fingerMid() }; }
+        });
+        viewerStage.addEventListener("pointermove", function (event) {
+            if (!fingers.has(event.pointerId)) return;
+            fingers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+            if (!pinch || fingers.size < 2) return;
+            const mid = fingerMid();
+            panX += mid.x - pinch.mid.x;           // two fingers moving together move the picture
+            panY += mid.y - pinch.mid.y;
+            pinch.mid = mid;
+            zoomTo(pinch.zoom * fingerGap() / pinch.gap, mid.x, mid.y);
+            justDragged = true;                    // a pinch is not a tap
+        });
+        ["pointerup", "pointercancel"].forEach(type => viewerStage.addEventListener(type, function (event) {
+            fingers.delete(event.pointerId);
+            if (fingers.size < 2) pinch = null;
+        }));
+
+        viewerStage.addEventListener("pointerdown", function (event) {
+            if (pinch || event.target.closest(".viewer-nav") || zoom === MIN_ZOOM) return;
             drag = { x: event.clientX, y: event.clientY, panX, panY, moved: false };
             viewerStage.setPointerCapture(event.pointerId);
             viewerStage.classList.add("dragging");
         });
 
         viewerStage.addEventListener("pointermove", function (event) {
-            if (!drag) return;
+            if (!drag || pinch) return;
             const dx = event.clientX - drag.x;
             const dy = event.clientY - drag.y;
             if (Math.abs(dx) > 3 || Math.abs(dy) > 3) drag.moved = true;
