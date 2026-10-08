@@ -1739,6 +1739,8 @@
         }
         .member-x:hover { background: #fdecec; color: #c62828; }
         @media (max-width: 700px) { .member-x { width: 44px; height: 44px; } }
+        .user-option.in-room { cursor: default; }
+        .user-option.in-room:hover .user-option-tag { background: #e7f6ec; color: #13843a; }
     </style>
 </head>
 
@@ -2622,26 +2624,21 @@
         // Click a user to add them; click a user who is "In room" to take them out again
         userList.addEventListener("click", async event => {
             const option = event.target.closest(".user-option");
-            if (!option || option.dataset.busy) return;
+            if (!option || option.dataset.busy || option.classList.contains("in-room")) return;   // already in the room
             const user = foundUsers.find(u => u.id === Number(option.dataset.id));
-            const inRoom = option.classList.contains("in-room");
             option.dataset.busy = "1";
             try {
-                if (inRoom) {
-                    await api(`/admin/rooms/${ROOM_ID}/members/${user.id}`, { method: "DELETE" });
-                    members = members.filter(u => u.id !== user.id);
-                    // the bell shows "Member was removed from …"
-                } else {
-                    await api(`/admin/rooms/${ROOM_ID}/members`, {
-                        method: "POST",
-                        body: JSON.stringify({ user_ids: [user.id] })
-                    });
-                    members.push(user);
-                    members.sort((a, b) => a.name.localeCompare(b.name));
-                    // the bell shows "Member was added to …"
-                }
+                await api(`/admin/rooms/${ROOM_ID}/members`, {
+                    method: "POST",
+                    body: JSON.stringify({ user_ids: [user.id] })
+                });
+                members.unshift(user);                  // newest first, so the added user shows in the bar right away
                 renderMembers();
-                searchUsers(addUserInput.value.trim());
+                // the row stays in the list and its "+ Add" turns into "✓ In room"
+                option.classList.add("in-room");
+                const addBtn = option.querySelector(".user-option-add");
+                if (addBtn) addBtn.outerHTML = '<span class="user-option-tag">✓ In room</span>';
+                // the bell shows "Member was added to …"
             } catch (err) {
                 alert(err.message);
             } finally {
