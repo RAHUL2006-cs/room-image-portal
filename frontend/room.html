@@ -2867,13 +2867,13 @@
                 </div>`;
         }
 
-function renderGallery() {
-    // Show both saved images and newly selected/uploading images
-    gallery.innerHTML = currentItems().map(cardHTML).join("");
-    updateImagesPanel();
-    updateSelectBar();
-    updateSubjectCount();
-}
+        function renderGallery() {
+            // Only saved images go in the Images section; uploads show in the summary line
+            gallery.innerHTML = savedInSubject().map(cardHTML).join("");
+            updateImagesPanel();
+            updateSelectBar();
+            updateSubjectCount();
+        }
 
         /* Keeps the "N images" text and the subject card count right */
         function updateSubjectCount() {
@@ -3094,14 +3094,24 @@ function renderGallery() {
         }
 
         // "change" is the normal event; some phone browsers only send "input"
-function onImagesPicked() {
-    if (!imageInput.files || !imageInput.files.length) return;
-    const files = [...imageInput.files];
-    imageInput.value = "";
-    addImageFiles(files);
-}
+        function onImagesPicked() {
+            if (!imageInput.files || !imageInput.files.length) return;
+            const files = [...imageInput.files];       // copy first, then clear so the same photos can be picked again
+            imageInput.value = "";
+            addImageFiles(files);
+        }
         imageInput.addEventListener("change", onImagesPicked);
         imageInput.addEventListener("input", onImagesPicked);
+        // Some Android phones close the gallery without telling the page: check the picker ourselves for 60 s
+        let pickWatch = null;
+        imageDrop.addEventListener("click", () => {
+            clearInterval(pickWatch);
+            const until = Date.now() + 60000;
+            pickWatch = setInterval(() => {
+                if (imageInput.files && imageInput.files.length) onImagesPicked();
+                if (Date.now() > until) clearInterval(pickWatch);
+            }, 500);
+        });
         ["dragenter", "dragover"].forEach(type => imageDrop.addEventListener(type, event => {
             event.preventDefault();
             imageDrop.classList.add("dragover");
@@ -3161,14 +3171,9 @@ function onImagesPicked() {
             }
         });
 
-gallery.addEventListener("click", async event => {
-    // Don't let gallery click handling interfere with typing in description
-    if (event.target.closest(".image-description")) {
-        return;
-    }
-
-    const item = itemFromEvent(event);
-    if (!item) return;
+        gallery.addEventListener("click", async event => {
+            const item = itemFromEvent(event);
+            if (!item) return;
 
             if (event.target.closest(".desc-save")) {
                 const btn = event.target.closest(".desc-save");
