@@ -3050,7 +3050,12 @@
         }
 
         function addImageFiles(files) {
-            if (currentSubjectId === null) return;
+            if (currentSubjectId === null) {
+                // Phones can lose this while the gallery is open; read it back from the address (#subject/ID)
+                const match = location.hash.match(/^#subject\/(\d+)$/);
+                if (!match) { alert("Open a subject first, then choose the images."); return; }
+                currentSubjectId = Number(match[1]);
+            }
             // Clear old "Done" labels from the previous batch
             currentItems().forEach(item => { if (item.status === "done") item.status = ""; });
 
@@ -3080,7 +3085,12 @@
             renderGallery();
             if (overLimit) rejected.push(`${overLimit} more ${overLimit === 1 ? "image" : "images"} (only ${MAX_IMAGES_PER_SESSION} at a time; add them after these finish)`);
             if (rejected.length) alert(`These files were skipped:\n\n${rejected.join("\n")}`);
-            if (added.length) enqueue(added);
+            if (added.length) {
+                enqueue(added);
+                // Take the admin to the new pictures, where the descriptions are typed (on phones they are below the screen)
+                const first = cardFor(added[0]);
+                if (first) setTimeout(() => first.scrollIntoView({ behavior: "smooth", block: "center" }), 100);
+            }
         }
 
         // "change" is the normal event; some phone browsers only send "input"
