@@ -1745,6 +1745,59 @@
         .user-option.in-room { cursor: default; }
         .user-option.in-room:hover .user-option-tag { background: #e7f6ec; color: #13843a; }
     </style>
+<script>
+/* ===== TEST ONLY: on-screen log so we can see what the phone does. Remove after testing. ===== */
+(function () {
+    var KEY = "uploadTestLog";
+    function read() { try { return JSON.parse(sessionStorage.getItem(KEY) || "[]"); } catch (e) { return []; } }
+    function save(lines) { try { sessionStorage.setItem(KEY, JSON.stringify(lines.slice(-25))); } catch (e) {} }
+    function log(msg) {
+        var t = new Date().toLocaleTimeString();
+        var lines = read(); lines.push(t + "  " + msg); save(lines); draw();
+    }
+    function draw() {
+        var box = document.getElementById("testLog");
+        if (!box) return;
+        box.querySelector("pre").textContent = read().join("\n");
+    }
+    window.testLog = log;
+    window.addEventListener("error", function (e) { log("ERROR: " + e.message + " (line " + e.lineno + ")"); });
+    window.addEventListener("unhandledrejection", function (e) { log("ERROR (promise): " + (e.reason && e.reason.message || e.reason)); });
+    var nav = (performance.getEntriesByType && performance.getEntriesByType("navigation")[0]) || {};
+    log("PAGE LOADED (" + (nav.type || "?") + ") " + location.hash);
+    document.addEventListener("visibilitychange", function () { log("page " + document.visibilityState); });
+
+    var origOpen = XMLHttpRequest.prototype.open;
+    XMLHttpRequest.prototype.open = function (m, url) {
+        var x = this;
+        if (/\/images$/.test(url)) {
+            log("upload started");
+            x.addEventListener("load", function () { log("upload finished: status " + x.status + " " + (x.status >= 300 ? x.responseText.slice(0, 120) : "")); });
+            x.addEventListener("error", function () { log("upload NETWORK ERROR"); });
+        }
+        return origOpen.apply(this, arguments);
+    };
+
+    document.addEventListener("DOMContentLoaded", function () {
+        var box = document.createElement("div");
+        box.id = "testLog";
+        box.style.cssText = "position:fixed;left:0;right:0;bottom:0;z-index:99999;background:#111;color:#0f0;font:11px/1.4 monospace;max-height:38vh;overflow:auto;padding:6px 8px;opacity:.92";
+        box.innerHTML = '<button type="button" style="float:right;font-size:11px">clear</button><b style="color:#fff">TEST LOG</b><pre style="margin:4px 0 0;white-space:pre-wrap"></pre>';
+        box.querySelector("button").onclick = function () { save([]); draw(); };
+        document.body.appendChild(box);
+        draw();
+        var input = document.getElementById("imageInput");
+        var drop = document.getElementById("imageDrop");
+        if (drop) drop.addEventListener("click", function () { log("tapped upload box"); });
+        if (input) {
+            input.addEventListener("click", function () { log("picker opening"); });
+            input.addEventListener("change", function () { log("change event: " + (input.files ? input.files.length : "no") + " file(s)"); }, true);
+            input.addEventListener("input", function () { log("input event: " + (input.files ? input.files.length : "no") + " file(s)"); }, true);
+            input.addEventListener("cancel", function () { log("picker CANCELLED (0 files)"); });
+        } else log("imageInput NOT FOUND");
+    });
+})();
+</script>
 </head>
 
 <body>
@@ -3081,6 +3134,7 @@
                     savedDescription: ""
                 }));
             });
+            if (window.testLog) testLog(`addImageFiles: subject ${currentSubjectId}, added ${added.length}, skipped ${rejected.length + overLimit}`);
             allItems.push(...added);
             renderGallery();
             if (overLimit) rejected.push(`${overLimit} more ${overLimit === 1 ? "image" : "images"} (only ${MAX_IMAGES_PER_SESSION} at a time; add them after these finish)`);
