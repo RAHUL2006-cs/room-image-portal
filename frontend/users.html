@@ -1623,6 +1623,11 @@
         @media (max-width: 700px) {
             .users-table:not(.selecting) tbody tr { padding-left: 12px !important; }
         }
+        .eye-wrap { position: relative; }
+        .eye-wrap .room-input { width: 100%; padding-right: 52px; }
+        .eye-btn { position: absolute; top: 50%; right: 8px; transform: translateY(-50%); width: 40px; height: 40px; border: none; border-radius: 10px; background: transparent; color: #8d7a6e; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .eye-btn:hover { background: #f4ebe5; color: #4d2f20; }
+        .eye-btn svg { width: 20px; height: 20px; }
     </style>
 </head>
 
@@ -1738,9 +1743,9 @@
                         </div>
                         <div class="room-field">
                             <label for="newPassword">Password <span class="hint">(filled with the default password, change it if you like)</span></label>
-                            <div class="password-row">
+                            <div class="eye-wrap">
                                 <input type="password" id="newPassword" class="room-input" autocomplete="new-password" required>
-                                <button type="button" class="ghost-btn" id="togglePassword">Show</button>
+                                <button type="button" class="eye-btn" id="togglePassword" aria-label="Show password" title="Show password"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l18 18"/><path d="M10.6 5.1A10.4 10.4 0 0 1 12 5c6.5 0 10 7 10 7a17.6 17.6 0 0 1-3.2 4.2"/><path d="M6.6 6.6C3.8 8.4 2 12 2 12s3.5 7 10 7c1.7 0 3.2-.5 4.5-1.2"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg></button>
                             </div>
                         </div>
                         <button type="submit" class="room-create-btn" id="addUserBtn">Create user</button>
@@ -1910,10 +1915,14 @@
             }
         }
 
+        /* Eye icon shows the current state: open eye = password visible, crossed eye = hidden */
+        const EYE_OPEN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+        const EYE_SHUT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l18 18"/><path d="M10.6 5.1A10.4 10.4 0 0 1 12 5c6.5 0 10 7 10 7a17.6 17.6 0 0 1-3.2 4.2"/><path d="M6.6 6.6C3.8 8.4 2 12 2 12s3.5 7 10 7c1.7 0 3.2-.5 4.5-1.2"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>';
         document.getElementById("togglePassword").addEventListener("click", function () {
-            const hidden = newPassword.type === "password";
-            newPassword.type = hidden ? "text" : "password";
-            this.textContent = hidden ? "Hide" : "Show";
+            const show = newPassword.type === "password";
+            newPassword.type = show ? "text" : "password";
+            this.innerHTML = show ? EYE_OPEN : EYE_SHUT;
+            this.title = this.ariaLabel = show ? "Hide password" : "Show password";
         });
 
         /* ---------- ADD ONE USER ---------- */
