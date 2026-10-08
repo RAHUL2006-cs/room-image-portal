@@ -1723,6 +1723,22 @@
         .chip-more:hover { background: #f4e7de; }
         .dropdown-search { padding: 10px; border-bottom: 1px solid #eee5df; background: #fffdfb; }
         .member-add .dropdown-search .room-input { height: 42px; padding-left: 14px; }
+        .member-box .user-chip { padding-right: 4px; }
+        .member-box .user-chip-remove { width: 22px; height: 22px; }
+        .member-x {
+            flex-shrink: 0;
+            width: 30px;
+            height: 30px;
+            border: none;
+            border-radius: 50%;
+            background: transparent;
+            color: #8b6a58;
+            font-size: 18px;
+            line-height: 1;
+            cursor: pointer;
+        }
+        .member-x:hover { background: #fdecec; color: #c62828; }
+        @media (max-width: 700px) { .member-x { width: 44px; height: 44px; } }
     </style>
 </head>
 
@@ -2243,6 +2259,8 @@
         const memberList = document.getElementById("memberList");
         const showMoreMembers = document.getElementById("showMoreMembers");
         const PAGE = 100;               // members drawn at a time (rooms can have thousands)
+        const CHIPS = 3;                // members shown as chips in the bar; the rest open from "+N more"
+        const extraMembers = () => members.slice(CHIPS);
         let membersShown = PAGE;
 
         /* Members bar: chips of the room's users, a count, and the arrow.
@@ -2257,7 +2275,16 @@
             if (!open) selectedMembers.clear();                     // closing the list also clears the selection
         }
         document.getElementById("memberBox").addEventListener("click", event => {
-            if (event.target.closest(".user-chip, .chip-more")) {   // the count or a chip: the room's users
+            const chipX = event.target.closest(".user-chip-remove");
+            if (chipX) {                                            // × on a chip: take that user out of the room
+                const user = members.find(u => u.id === Number(chipX.dataset.id));
+                if (user && confirm(`Remove ${user.email} from "${room.name}"?\n\nThey won't see this room any more. Their account is kept.`)) {
+                    removeMembers({ user_ids: [user.id] });
+                }
+                return;
+            }
+            if (event.target.closest(".user-chip")) return;         // the chip itself does nothing
+            if (event.target.closest(".chip-more")) {               // "+N more": the users not shown in the bar
                 closeUserDropdown();
                 setMembersOpen(!membersOpen);
                 renderMembers();
@@ -2272,7 +2299,7 @@
         });
 
         function renderMembers() {
-            const list = members;
+            const list = extraMembers();
 
             if (!members.length) {
                 memberList.innerHTML = "";          // no members: show nothing
@@ -2285,17 +2312,18 @@
                             <span class="member-name">${escapeHTML(u.name)}</span>
                             <span class="member-email">${escapeHTML(u.email)}${u.college ? ` · ${escapeHTML(u.college)}` : ""}</span>
                         </span>
+                        <button type="button" class="member-x" title="Remove from room" aria-label="Remove ${escapeHTML(u.email)} from the room">×</button>
                     </div>`).join("");
             }
-            const CHIPS = 3;
             memberChips.innerHTML = members.slice(0, CHIPS).map(u => `
-                <span class="user-chip" title="${escapeHTML(u.email)} · click to see the room's users">
+                <span class="user-chip" title="${escapeHTML(u.email)}">
                     <span class="user-chip-avatar">${escapeHTML(u.name.charAt(0).toUpperCase())}</span>
                     <span class="user-chip-name">${escapeHTML(u.name)}</span>
+                    <button type="button" class="user-chip-remove" data-id="${u.id}" title="Remove from room" aria-label="Remove ${escapeHTML(u.email)} from the room">×</button>
                 </span>`).join("")
                 + (members.length > CHIPS ? `<button type="button" class="chip-more" title="See the room's users">+${(members.length - CHIPS).toLocaleString("en-IN")} more</button>` : "");
             memberEmpty.hidden = members.length > 0;               // "Add users" only while the room is empty
-            if (!members.length) setMembersOpen(false);
+            if (list.length === 0) setMembersOpen(false);          // nothing extra to show
             memberList.hidden = !membersOpen;                       // the room's users show after clicking the count / a chip
             showMoreMembers.hidden = !membersOpen || list.length <= membersShown;
             showMoreMembers.textContent = `Show more (${(list.length - membersShown).toLocaleString("en-IN")} left)`;
@@ -2450,15 +2478,16 @@
         const removeSelectedMembers = document.getElementById("removeSelectedMembers");
 
         function updateMemberBar() {
-            [...selectedMembers].forEach(id => { if (!members.some(u => u.id === id)) selectedMembers.delete(id); });
+            const shown = extraMembers();
+            [...selectedMembers].forEach(id => { if (!shown.some(u => u.id === id)) selectedMembers.delete(id); });
             const n = selectedMembers.size;
-            const all = n > 0 && n === members.length;
+            const all = n > 0 && n === shown.length;
             memberSelectBar.hidden = n === 0;                        // shows after the first member is clicked
             memberList.classList.toggle("selecting", n > 0);         // checkboxes only while selecting
             selectAllMembers.checked = all;
             selectAllMembers.indeterminate = false;
-            selectAllMembers.closest("label").hidden = members.length < 2;   // one member: no "Select all"
-            removeSelectedMembers.textContent = members.length < 2 ? "Remove"
+            selectAllMembers.closest("label").hidden = shown.length < 2;     // one user in the list: no "Select all"
+            removeSelectedMembers.textContent = shown.length < 2 ? "Remove"
                 : all ? `Remove all (${n.toLocaleString("en-IN")})` : `Remove (${n.toLocaleString("en-IN")})`;
         }
 
@@ -2474,7 +2503,7 @@
         // "Select all" picks every member of the room, also the ones not shown yet
         selectAllMembers.addEventListener("change", () => {
             selectedMembers.clear();
-            if (selectAllMembers.checked) members.forEach(u => selectedMembers.add(u.id));
+            if (selectAllMembers.checked) extraMembers().forEach(u => selectedMembers.add(u.id));
             renderMembers();
         });
 
@@ -2512,6 +2541,13 @@
         // Clicking anywhere on a member row ticks / unticks it
         memberList.addEventListener("click", event => {
             const row = event.target.closest(".member-row");
+            if (row && event.target.closest(".member-x")) {        // × on a row: take that user out of the room
+                const user = members.find(u => u.id === Number(row.dataset.id));
+                if (user && confirm(`Remove ${user.email} from "${room.name}"?\n\nThey won't see this room any more. Their account is kept.`)) {
+                    removeMembers({ user_ids: [user.id] });
+                }
+                return;
+            }
             if (!row || event.target.classList.contains("member-check")) return;
             const box = row.querySelector(".member-check");
             box.checked = !box.checked;
