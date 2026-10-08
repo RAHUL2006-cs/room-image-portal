@@ -414,7 +414,7 @@
         document.getElementById("topBack").addEventListener("click", () => {
             if (/^#subject\/\d+$/.test(location.hash)) location.hash = room ? `room/${room.room_id}` : "";
             else if (/^#room\/\d+$/.test(location.hash)) location.hash = "";
-            else logout();
+            else if (confirm("Do you want to logout?")) logout();   // My rooms: Back logs out only after asking
         });
         document.getElementById("logoutBtn").addEventListener("click", () => {
             if (confirm("Do you want to logout?")) logout();
