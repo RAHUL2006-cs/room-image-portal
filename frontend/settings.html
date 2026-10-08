@@ -1753,7 +1753,7 @@
                 </div>
                 <form id="defaultPasswordForm" class="settings-form" autocomplete="off">
                     <div class="room-field">
-                        <label for="defaultPasswordInput">Default password <span class="hint">(at least 6 characters)</span></label>
+                        <label for="defaultPasswordInput">Password <span class="hint">(at least 6 characters)</span></label>
                         <div class="eye-wrap">
                             <input type="password" id="defaultPasswordInput" class="room-input" autocomplete="new-password" required minlength="6">
                             <button type="button" class="eye-btn" id="toggleDefaultPassword" aria-label="Show password" title="Show password"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
@@ -1941,8 +1941,8 @@
                         <span class="member-name">${escapeHTML(a.name || "Admin")}</span>
                         <span class="member-email">${escapeHTML(a.email)}</span>
                     </span>
-                    ${a.is_me ? '<span class="admin-you">You</span>'
-                              : '<button type="button" class="member-remove remove-admin">Remove</button>'}
+                    ${a.is_me ? '<span class="admin-you">You</span>' : ''}
+                    ${admins.length > 1 ? '<button type="button" class="member-remove remove-admin">Remove</button>' : ''}
                 </div>`).join("");
         }
 
@@ -1994,10 +1994,14 @@
             if (!btn) return;
             const id = Number(btn.closest(".member-row").dataset.id);
             const admin = admins.find(a => a.id === id);
-            if (!confirm(`Remove ${admin.email} as admin?\n\nThey won't be able to log in to the admin portal any more.`)) return;
+            const question = admin.is_me
+                ? "Remove yourself as admin?\n\nYou'll be logged out and won't be able to log in to the admin portal any more."
+                : `Remove ${admin.email} as admin?\n\nThey won't be able to log in to the admin portal any more.`;
+            if (!confirm(question)) return;
             btn.disabled = true;
             try {
                 await api(`/admin/admins/${id}`, { method: "DELETE" });
+                if (admin.is_me) { logout(); return; }     // you removed yourself: back to the login page
                 admins = admins.filter(a => a.id !== id);
                 renderAdmins();
                 // the bell shows "Admin was removed."

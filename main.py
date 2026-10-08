@@ -676,10 +676,11 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
     return user_id
 
 
-def get_current_admin(token: str = Depends(oauth2_scheme)):
-    """For admins only. A regular user's login is rejected here."""
+def get_current_admin(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    """For admins only. A regular user's login is rejected here,
+    and so is the login of an admin who has been removed."""
     admin_id, role = read_token(token)
-    if role != "admin":
+    if role != "admin" or not db.query(Admin.id).filter(Admin.id == admin_id).first():
         raise HTTPException(
             status_code=401,
             detail="Admin login required",
@@ -789,7 +790,12 @@ def admin_signup(data: AdminSignupRequest, db: Session = Depends(get_db)):
 
     # Online safety: once an admin exists, nobody else can make an admin account from the
     # sign-up page (set ALLOW_ADMIN_SIGNUP=true to allow more admins for a while)
-    
+    allow_signup = os.getenv("ALLOW_ADMIN_SIGNUP", "").strip().lower() == "true"
+    if db.query(Admin.id).first() and not allow_signup:
+        raise HTTPException(
+            status_code=403,
+            detail="Admin sign-up is closed. Ask an existing admin to add you from Settings."
+        )
 
     admin = Admin(name=name, email=email, password_hash=hash_password(data.password))
     db.add(admin)
@@ -2141,8 +2147,6 @@ def remove_admin(
     current_admin: int = Depends(get_current_admin),
     db: Session = Depends(get_db)
 ):
-    if admin_id == current_admin:
-        raise HTTPException(status_code=400, detail="You can't remove yourself")
     admin = db.query(Admin).filter(Admin.id == admin_id).first()
     if not admin:
         raise HTTPException(status_code=404, detail="Admin not found")
