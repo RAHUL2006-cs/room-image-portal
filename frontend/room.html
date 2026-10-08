@@ -1683,6 +1683,38 @@
         .members-toggle svg { width: 20px; height: 20px; transition: transform 0.2s ease; }
         .members-toggle.open svg { transform: rotate(180deg); }
         @media (max-width: 700px) { .members-toggle { width: 44px; height: 44px; } }
+        .member-box {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 6px;
+            min-height: 50px;
+            padding: 7px 8px 7px 46px;
+            border: 1px solid #dfd3cb;
+            border-radius: 11px;
+            background: #fff;
+            cursor: text;
+            transition: 0.2s ease;
+        }
+        .member-box:focus-within { border-color: #a66a47; box-shadow: 0 0 0 3px rgba(166, 106, 71, 0.09); }
+        .member-chips { display: contents; }
+        .member-box .user-chip { max-width: 170px; padding-right: 10px; }
+        .chip-more { font-size: 13px; font-weight: 600; color: #7a5a47; white-space: nowrap; }
+        .member-input {
+            flex: 1;
+            min-width: 140px;
+            height: 34px;
+            border: none;
+            outline: none;
+            background: transparent;
+            color: #3e3028;
+            font-family: inherit;
+            font-size: 15px;
+        }
+        .member-input::placeholder { color: #aaa09a; }
+        .member-box .members-toggle { margin-left: auto; width: 34px; height: 34px; }
+        .user-option .user-checkbox { pointer-events: none; }
+        @media (max-width: 700px) { .member-box .members-toggle { width: 44px; height: 44px; } }
     </style>
 </head>
 
@@ -1802,9 +1834,6 @@
                             <h2>Members <span class="tab-count" id="memberCount">0</span></h2>
                             <p>Only these users can see this room.</p>
                         </div>
-                        <button type="button" class="members-toggle" id="membersToggle" hidden aria-expanded="false" title="Show members" aria-label="Show members">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
-                        </button>
                     </div>
                     <div class="member-tools">
                         <div class="member-add" id="memberAdd">
@@ -1814,7 +1843,13 @@
                                 <line x1="19" y1="8" x2="19" y2="14"></line>
                                 <line x1="16" y1="11" x2="22" y2="11"></line>
                             </svg>
-                            <input type="text" id="addUserInput" class="room-input" placeholder="Add users: search by name, email or college…" autocomplete="off">
+                            <div class="member-box" id="memberBox">
+                                <span class="member-chips" id="memberChips"></span>
+                                <input type="text" id="addUserInput" class="member-input" placeholder="Add users: search by name, email or college…" autocomplete="off">
+                                <button type="button" class="members-toggle" id="membersToggle" hidden aria-expanded="false" title="Show members" aria-label="Show members">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                                </button>
+                            </div>
                             <div class="user-dropdown" id="userDropdown">
                                 <div class="user-list" id="userList"></div>
                                 <div class="user-dropdown-footer">
@@ -2201,6 +2236,11 @@
 
         /* Show / hide the member list with the arrow button in the Members bar */
         const membersToggle = document.getElementById("membersToggle");
+        const memberChips = document.getElementById("memberChips");
+        // clicking anywhere in the bar (not the arrow) puts the cursor in the search box
+        document.getElementById("memberBox").addEventListener("click", event => {
+            if (!event.target.closest("#membersToggle")) document.getElementById("addUserInput").focus();
+        });
         let membersOpen = false;
         function setMembersOpen(open) {
             membersOpen = open;
@@ -2230,6 +2270,15 @@
                         </span>
                     </div>`).join("");
             }
+            const CHIPS = 3;
+            memberChips.innerHTML = members.slice(0, CHIPS).map(u => `
+                <span class="user-chip" title="${escapeHTML(u.email)}">
+                    <span class="user-chip-avatar">${escapeHTML(u.name.charAt(0).toUpperCase())}</span>
+                    <span class="user-chip-name">${escapeHTML(u.name)}</span>
+                </span>`).join("")
+                + (members.length > CHIPS ? `<span class="chip-more">+${(members.length - CHIPS).toLocaleString("en-IN")} more</span>` : "");
+            document.getElementById("addUserInput").placeholder = members.length
+                ? "Add users…" : "Add users: search by name, email or college…";   // shorter when chips fill the bar
             membersToggle.hidden = !members.length;                 // the button shows once the room has members
             if (!members.length) setMembersOpen(false);
             memberList.hidden = !membersOpen;                       // members show only after clicking the button
@@ -2482,7 +2531,7 @@
                                 <span class="user-option-name">${escapeHTML(u.name)}</span>
                                 <span class="user-option-email">${escapeHTML(u.email)}${u.college ? ` · ${escapeHTML(u.college)}` : ""}</span>
                             </span>
-                            ${inRoom ? '<span class="user-option-tag"><span class="tag-in">✓ In room</span><span class="tag-remove">× Remove</span></span>' : '<span class="user-option-add">+ Add</span>'}
+                            ${inRoom ? '<span class="user-option-tag">✓ In room</span>' : '<span class="user-option-add">+ Add</span>'}
                         </div>`;
                 }).join("");
             }
