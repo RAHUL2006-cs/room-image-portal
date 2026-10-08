@@ -152,6 +152,16 @@
             margin-bottom: 28px;
         }
         .welcome h1 { font-size: 43px; line-height: 1.1; letter-spacing: -1.5px; margin-bottom: 8px; }
+        .topbar .back-link { margin: 0 auto 0 0 !important; font-size: 16px; }
+        .topbar.has-back::before { display: none !important; }
+        .back-link {
+            display: inline-block;
+            color: #7a5a47;
+            font-size: 15px;
+            font-weight: 600;
+            text-decoration: none;
+        }
+        .back-link:hover { color: #4d2f20; text-decoration: underline; }
         .welcome p { color: #67564d; font-size: 20px; }
         .date-section { text-align: right; min-width: 290px; }
         .date {
@@ -1220,12 +1230,34 @@
             cursor: pointer;
         }
         .member-remove:hover { background: #f8dddd; }
+        /* ---------- Admins section ---------- */
+        .admin-form { display: grid; grid-template-columns: minmax(0, 520px); gap: 14px; margin-bottom: 14px; }
+        .admin-form .room-field { margin: 0; }
+        .admin-form .room-create-btn { margin: 0; height: 50px; white-space: nowrap; justify-self: end; min-width: 160px; }
+        .admin-you { font-size: 12px; font-weight: 700; color: #8b5a3c; background: #f6ebe3; padding: 6px 12px; border-radius: 99px; }
+        @media (max-width: 900px) {
+            .admin-form { grid-template-columns: 1fr; }
+            .admin-form .room-create-btn { width: 100%; }
+        }
         .member-remove:disabled { opacity: 0.5; cursor: wait; }
         .show-more {
             display: block;
             margin: 14px auto 0;
         }
 
+        .settings-form { display: grid; grid-template-columns: minmax(0, 420px) max-content; justify-content: start; gap: 14px; align-items: end; }
+        .settings-form .room-field { margin: 0; }
+        .settings-form .room-create-btn { margin: 0; height: 50px; min-width: 120px; }
+        #admins { margin-top: 18px; }
+        .eye-wrap { position: relative; }
+        .eye-wrap .room-input { width: 100%; padding-right: 52px; }
+        .eye-btn { position: absolute; top: 50%; right: 8px; transform: translateY(-50%); width: 40px; height: 40px; border: none; border-radius: 10px; background: transparent; color: #8d7a6e; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .eye-btn:hover { background: #f4ebe5; color: #4d2f20; }
+        .eye-btn svg { width: 20px; height: 20px; }
+        @media (max-width: 700px) {
+            .settings-form { grid-template-columns: 1fr; }
+            .settings-form .room-create-btn { width: 100%; }
+        }
         /* ---------- SUBJECTS ---------- */
         .subject-add { margin-bottom: 16px; max-width: 620px; }
         .subject-grid {
@@ -1376,11 +1408,243 @@
         }
 
     
+        .users-top { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+        .hint { color: #8b7b71; font-weight: 400; font-size: 13px; }
         .password-row { display: flex; gap: 10px; }
         .password-row .room-input { flex: 1; }
         .password-row .ghost-btn { height: 50px; }
+        #addUserBtn, #bulkUploadBtn { width: 100%; margin-top: 4px; }
+        #bulkUploadBtn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+        select.room-input { appearance: auto; cursor: pointer; }
+        .job-box { margin-top: 16px; padding: 14px; border: 1px solid #eadfd8; border-radius: 12px; background: #fffaf7; }
+        .job-line { display: flex; justify-content: space-between; font-size: 14px; font-weight: 600; color: #5a3a29; margin-bottom: 8px; }
+        .job-bar { height: 8px; border-radius: 8px; background: #f1e6df; overflow: hidden; }
+        .job-bar span { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #834521, #b36d43); transition: width 0.3s ease; }
+        .job-summary { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px; font-size: 13px; }
+        .pill { padding: 4px 10px; border-radius: 20px; font-weight: 600; }
+        .pill.ok { background: #e7f6ec; color: #13843a; }
+        .pill.skip { background: #fbf1e6; color: #9a5f1d; }
+        .pill.fail { background: #fdecec; color: #c62828; }
+        .search-box { width: 300px; max-width: 100%; }
+        .users-table { min-width: 640px; }
+        .users-table td { height: 56px; font-size: 15px; }
+        .user-cell { display: flex; align-items: center; gap: 12px; }
+        .college-tag { display: inline-block; padding: 3px 10px; border-radius: 20px; background: #f4e7de; color: #5a3a29; font-size: 13px; font-weight: 600; }
+        .muted { color: #a3958c; }
+        .select-bar { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin: 0 0 14px; font-size: 14px; color: #5d4b42; }
+        .select-bar label { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 600; }
+        .select-bar input, .user-check { width: 18px; height: 18px; accent-color: #805035; cursor: pointer; }
+        .select-bar .spacer { flex: 1; }
+        .ghost-btn.danger.solid { background: #c62828; border-color: #c62828; color: #fff; }
+        .ghost-btn.danger.solid:hover { background: #a91f1f; }
+        .check-col { width: 44px; }
+        .users-table tbody tr[data-id] { cursor: pointer; }
+        .users-table tbody tr, .member-row, .gallery-check-wrap, .subject-card { -webkit-tap-highlight-color: transparent; }
+        .users-table tr.selected td { background: #fbf1ea; }
+        @media (max-width: 1100px) { .users-top { grid-template-columns: 1fr; } }
+        @media (max-width: 600px) { .search-box { width: 100%; } }
         .default-note { margin: 2px 0 16px; padding: 11px 14px; border-radius: 10px; background: #f8f1ec; color: #5d4b42; font-size: 13px; line-height: 1.5; }
+        .default-note a { color: #8b4a26; font-weight: 600; }
 
+
+        /* ========== PHONES: tables turn into cards, everything easy to tap (PRD: 360 px, 44 px) ========== */
+        @media (max-width: 700px) {
+            .table-wrapper { overflow: visible; }
+            .table-wrapper table { min-width: 0 !important; }
+            .table-wrapper thead { display: none; }
+            .table-wrapper table, .table-wrapper tbody, .table-wrapper tr, .table-wrapper td { display: block; width: 100%; }
+            .table-wrapper tbody tr {
+                position: relative;
+                margin-bottom: 12px;
+                padding: 12px 14px;
+                border: 1px solid #eee6e0;
+                border-radius: 14px;
+                background: #fff;
+            }
+            .table-wrapper tbody tr:hover { background: #fff; }
+            .table-wrapper td {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 12px;
+                height: auto;
+                min-height: 34px;
+                padding: 4px 0;
+                border: none;
+                font-size: 15px;
+            }
+            .table-wrapper td[data-label]::before {
+                content: attr(data-label);
+                color: #8d8179;
+                font-size: 13px;
+                font-weight: 600;
+            }
+            .table-wrapper td.cell-hide { display: none; }
+            .table-wrapper td.cell-main { padding-bottom: 8px; margin-bottom: 4px; border-bottom: 1px solid #f2ebe6; }
+            .table-wrapper td.cell-main::before { content: none; }
+            .table-wrapper td.cell-actions { justify-content: flex-end; padding-top: 8px; }
+            .table-wrapper td.cell-actions::before { content: none; }
+            .table-wrapper .status-row td { display: block; text-align: center; height: auto; padding: 24px 8px; }
+        }
+        @media (max-width: 700px) {
+            /* checkbox sits in the card's top-right corner */
+            .table-wrapper td.cell-check { position: absolute; top: 10px; right: 6px; width: auto; min-height: 0; padding: 0; }
+            .table-wrapper td.cell-main { padding-right: 48px; word-break: break-all; }
+            .user-check { width: 26px; height: 26px; }
+            .table-wrapper td.cell-check .user-check { margin: 9px; }
+            .select-bar label { min-height: 44px; }
+            .select-bar .ghost-btn, .member-remove, .delete-user { min-height: 44px; }
+            .users-table tr.selected { border-color: #a66a47; background: #fbf1ea; }
+            .users-table tr.selected td { background: transparent; }
+            .search-box { height: 48px; }
+            .password-row .ghost-btn { min-width: 64px; }
+            .profile { min-height: 44px; }
+        }
+
+        /* =====================================================================
+           PHONES (≤ 700 px): app-style layout
+           - the sidebar becomes a bottom menu bar
+           - compact top bar with the portal name
+           - full-width content, no cards inside cards
+        ===================================================================== */
+        @media (max-width: 700px) {
+            html, body { background: #faf8f6; }
+            body { -webkit-tap-highlight-color: transparent; }
+
+            /* Bottom menu bar */
+            .sidebar {
+                top: auto;
+                bottom: 0;
+                left: 0;
+                width: 100% !important;
+                height: auto;
+                padding: 6px 10px calc(6px + env(safe-area-inset-bottom)) !important;
+                background: #3d281f;
+                box-shadow: 0 -6px 20px rgba(40, 24, 16, 0.18);
+                overflow: visible;
+            }
+            .sidebar::before, .sidebar::after, .logo { display: none !important; }
+            .nav { flex-direction: row; justify-content: space-around; gap: 4px; }
+            .nav-item {
+                flex: 1;
+                height: 54px !important;
+                padding: 0 !important;
+                flex-direction: column;
+                justify-content: center !important;
+                gap: 3px;
+                border-radius: 12px;
+                font-size: 11.5px;
+                font-weight: 600;
+                color: rgba(255, 255, 255, 0.7);
+            }
+            .nav-item span:last-child { display: block !important; }
+            .nav-item.active {
+                background: rgba(205, 166, 138, 0.28);
+                box-shadow: none;
+                color: #fff;
+            }
+            .nav-icon, .nav-icon svg { width: 22px; height: 22px; }
+
+            /* Page area */
+            .main {
+                width: 100% !important;
+                margin-left: 0 !important;
+                height: auto !important;
+                min-height: 100vh;
+                overflow: visible !important;
+                padding-bottom: calc(80px + env(safe-area-inset-bottom));
+            }
+
+            /* Compact top bar */
+            .topbar {
+                position: sticky;
+                top: 0;
+                z-index: 90;
+                height: 56px !important;
+                padding: 0 16px !important;
+                justify-content: space-between;
+                background: rgba(255, 255, 255, 0.94);
+                backdrop-filter: blur(10px);
+                -webkit-backdrop-filter: blur(10px);
+            }
+            .topbar::before {
+                content: "Admin Portal";
+                color: #4d2f20;
+                font-size: 18px;
+                font-weight: 700;
+                letter-spacing: -0.3px;
+            }
+            .notification { display: none; }
+            .profile { gap: 6px; }
+            .profile-avatar { width: 36px; height: 36px; font-size: 15px; }
+            .profile-name { display: none; }
+
+            .content { padding: 16px 16px 24px !important; }
+
+            /* Panels: lighter, less padding */
+            .panel, .rooms-card {
+                padding: 16px !important;
+                border-radius: 16px;
+            }
+            .panel-head { margin-bottom: 12px; }
+            .panel-head h2 { font-size: 19px; }
+            .panel-head p { font-size: 13px; }
+        }
+        /* Users page on phones */
+        @media (max-width: 700px) {
+            .room-head { margin-bottom: 14px; }
+            .room-head h1 { font-size: 26px !important; }
+            .room-meta { font-size: 13px; }
+            .users-top { gap: 14px; }
+            .search-box { width: 100% !important; }
+
+            /* user cards: checkbox left, email, then small chips */
+            .table-wrapper tbody tr {
+                display: flex !important;
+                flex-wrap: wrap;
+                align-items: center;
+                gap: 6px;
+                padding: 12px 12px 12px 52px !important;
+                border-radius: 14px !important;
+            }
+            .table-wrapper td { width: auto !important; min-height: 0 !important; padding: 0 !important; }
+            .table-wrapper td.cell-check { position: absolute; top: 4px !important; left: 2px !important; right: auto !important; }
+            .table-wrapper td.cell-main {
+                flex: 1 1 100%;
+                margin: 0 0 2px !important;
+                padding: 0 !important;
+                border: none !important;
+                font-weight: 600;
+                word-break: break-all;
+            }
+            .table-wrapper td.cell-main .user-avatar-small { display: none; }
+            .table-wrapper td[data-label] {
+                display: inline-flex !important;
+                gap: 5px !important;
+                padding: 4px 9px !important;
+                border-radius: 20px;
+                background: #f6efea;
+                font-size: 12px !important;
+                font-weight: 700;
+            }
+            .table-wrapper td[data-label]::before { font-size: 11.5px !important; font-weight: 500 !important; }
+            .table-wrapper td[data-label="College"] { background: none; padding: 0 !important; }
+            .table-wrapper td[data-label="College"]::before { content: none; }
+            .table-wrapper td.cell-actions { margin-left: auto; }
+            .table-wrapper .delete-user { min-height: 36px !important; padding: 0 12px; font-size: 12.5px; }
+            .select-bar { gap: 8px; }
+            .select-bar .spacer { display: none; }
+            .select-bar .ghost-btn { flex: 1 1 auto; }
+        }
+
+        /* Checkboxes only show after the first user is selected */
+        .users-table:not(.selecting) .check-col,
+        .users-table:not(.selecting) .cell-check { display: none !important; }
+        .users-table:not(.selecting) th:nth-child(2) { border-radius: 11px 0 0 11px; }
+        .users-table th.check-col input { width: 18px; height: 18px; accent-color: #805035; cursor: pointer; vertical-align: middle; }
+        @media (max-width: 700px) {
+            .users-table:not(.selecting) tbody tr { padding-left: 12px !important; }
+        }
     </style>
 </head>
 
@@ -1455,7 +1719,8 @@
 
     <!-- ========================= MAIN ========================= -->
     <main class="main">
-        <header class="topbar">
+        <header class="topbar has-back">
+            <a href="dashboard.html" class="back-link">‹ Back</a>
             <div class="notification">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/>
@@ -1476,25 +1741,55 @@
             <div class="room-head">
                 <div>
                     <h1 style="font-size:36px;letter-spacing:-1px">Settings</h1>
-                    <div class="room-meta">Admin settings for the portal.</div>
                 </div>
             </div>
-            <div class="panel" style="max-width:620px">
+
+            <!-- DEFAULT PASSWORD (PRD: Settings, default password for new users) -->
+            <div class="panel">
                 <div class="panel-head">
                     <div>
                         <h2>Default password</h2>
-                        <p>Pre-filled as the password for new users, and used when a bulk upload row has no password. Users can't change it.</p>
                     </div>
                 </div>
-                <div class="room-field">
-                    <label for="defaultPassword">Password</label>
-                    <div class="password-row">
-                        <input type="password" id="defaultPassword" class="room-input" autocomplete="off">
-                        <button type="button" class="ghost-btn" id="togglePw">Show</button>
+                <form id="defaultPasswordForm" class="settings-form" autocomplete="off">
+                    <div class="room-field">
+                        <label for="defaultPasswordInput">Default password <span class="hint">(at least 6 characters)</span></label>
+                        <div class="eye-wrap">
+                            <input type="password" id="defaultPasswordInput" class="room-input" autocomplete="new-password" required minlength="6">
+                            <button type="button" class="eye-btn" id="toggleDefaultPassword" aria-label="Show password" title="Show password"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
+                        </div>
+                    </div>
+                    <button type="submit" class="room-create-btn" id="saveDefaultBtn">Save</button>
+                </form>
+            </div>
+
+            <!-- ADMINS: only admins can add admins -->
+            <div class="panel" style="margin-top:18px" id="admins">
+                <div class="panel-head">
+                    <div>
+                        <h2>Admins <span class="tab-count" id="adminTotal">0</span></h2>
+                        <p>Only admins can add admins.</p>
                     </div>
                 </div>
-                <p class="default-note">Changing it only affects users created from now on. Existing users keep their password.</p>
-                <button type="button" class="room-create-btn" id="savePwBtn">Save password</button>
+                <form id="addAdminForm" class="admin-form" autocomplete="off">
+                    <div class="room-field">
+                        <label for="adminName">Name</label>
+                        <input type="text" id="adminName" class="room-input" placeholder="e.g. Anjali" required maxlength="80">
+                    </div>
+                    <div class="room-field">
+                        <label for="adminEmail">Email</label>
+                        <input type="email" id="adminEmail" class="room-input" placeholder="e.g. anjali@college.edu" required>
+                    </div>
+                    <div class="room-field">
+                        <label for="adminPassword">Password <span class="hint">(at least 6 characters)</span></label>
+                        <div class="eye-wrap">
+                            <input type="password" id="adminPassword" class="room-input" autocomplete="new-password" required minlength="6">
+                            <button type="button" class="eye-btn" id="toggleAdminPassword" aria-label="Show password" title="Show password"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
+                        </div>
+                    </div>
+                    <button type="submit" class="room-create-btn" id="addAdminBtn">Add admin</button>
+                </form>
+                <div class="member-list admin-list" id="adminList"></div>
             </div>
         </section>
     </main>
@@ -1504,10 +1799,12 @@
     <!-- ========================= JAVASCRIPT ========================= -->
     <script>
 
+
         /* BACKEND CONNECTION: change this if your FastAPI server runs somewhere else */
-           const API_BASE = location.protocol === "file:" ? "http://127.0.0.1:8001"
-               : location.port === "5500" ? "http://" + location.hostname + ":8001"
-               : location.origin;
+        const API_BASE = location.protocol === "file:" ? "http://127.0.0.1:8001"          // opened as a file on the Mac
+            : location.port === "5500" ? "http://" + location.hostname + ":8001"   // python3 -m http.server 5500
+            : location.origin;                                                    // served by the backend / online
+
         /* ---------- JWT PROTECTION ---------- */
         const token = localStorage.getItem("access_token");
         if (!token) {
@@ -1572,56 +1869,509 @@
 
 
 
+
         document.getElementById("profileName").textContent = localStorage.getItem("user_name") || "Admin";
         document.getElementById("profileAvatar").textContent = (localStorage.getItem("user_name") || "A").charAt(0).toUpperCase();
 
         let toastTimer = null;
         function showToast(message) {
+            if (localStorage.getItem("notifications_enabled") === "false") return;   // bell muted: no pop-ups
             const toast = document.getElementById("toast");
             toast.textContent = message;
             toast.classList.add("show");
             clearTimeout(toastTimer);
             toastTimer = setTimeout(() => toast.classList.remove("show"), 3000);
         }
+        const fmt = n => Number(n || 0).toLocaleString("en-IN");
 
-        const pwInput = document.getElementById("defaultPassword");
-        const savePwBtn = document.getElementById("savePwBtn");
-
-        document.getElementById("togglePw").addEventListener("click", function () {
-            const hidden = pwInput.type === "password";
-            pwInput.type = hidden ? "text" : "password";
-            this.textContent = hidden ? "Hide" : "Show";
-        });
-
-        async function loadSettings() {
-            try {
-                pwInput.value = (await api("/admin/settings")).default_password;
-            } catch (err) {
-                alert(err.message);
-            }
-        }
-
-        savePwBtn.addEventListener("click", async () => {
-            const password = pwInput.value.trim();
-            if (password.length < 6) { alert("Use at least 6 characters."); pwInput.focus(); return; }
-            savePwBtn.disabled = true;
-            try {
-                await api("/admin/settings/default-password", { method: "PUT", body: JSON.stringify({ password }) });
-                showToast("Default password saved");
-            } catch (err) {
-                alert(err.message);
-            } finally {
-                savePwBtn.disabled = false;
-            }
-        });
-        pwInput.addEventListener("keydown", event => { if (event.key === "Enter") savePwBtn.click(); });
-
+        /* ---------- LOGOUT ---------- */
         document.querySelector(".profile").addEventListener("click", function () {
             if (confirm("Do you want to logout?")) logout();
         });
 
-        if (token) loadSettings();
+        /* ---------- DEFAULT PASSWORD ---------- */
+        const EYE_OPEN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+        const EYE_SHUT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l18 18"/><path d="M10.6 5.1A10.4 10.4 0 0 1 12 5c6.5 0 10 7 10 7a17.6 17.6 0 0 1-3.2 4.2"/><path d="M6.6 6.6C3.8 8.4 2 12 2 12s3.5 7 10 7c1.7 0 3.2-.5 4.5-1.2"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>';
+        const defaultInput = document.getElementById("defaultPasswordInput");
+
+        async function loadDefaultPassword() {
+            try {
+                defaultInput.value = (await api("/admin/settings")).default_password;
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        document.getElementById("toggleDefaultPassword").addEventListener("click", function () {
+            const show = defaultInput.type === "password";
+            defaultInput.type = show ? "text" : "password";
+            this.innerHTML = show ? EYE_SHUT : EYE_OPEN;     // same eye icons as the admin password
+            this.title = this.ariaLabel = show ? "Hide password" : "Show password";
+        });
+
+        document.getElementById("defaultPasswordForm").addEventListener("submit", async event => {
+            event.preventDefault();
+            const password = defaultInput.value.trim();
+            if (password.length < 6) { alert("The default password needs at least 6 characters."); return; }
+            const btn = document.getElementById("saveDefaultBtn");
+            btn.disabled = true;
+            btn.textContent = "Saving…";
+            try {
+                const saved = await api("/admin/settings/default-password", { method: "PUT", body: JSON.stringify({ password }) });
+                defaultInput.value = saved.default_password;
+                // the bell shows "Default password was changed."
+            } catch (err) {
+                alert(err.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = "Save";
+            }
+        });
+
+        /* ---------- ADMINS (only admins can add admins) ---------- */
+        const adminList = document.getElementById("adminList");
+        let admins = [];
+
+        function renderAdmins() {
+            document.getElementById("adminTotal").textContent = admins.length.toLocaleString("en-IN");
+            adminList.innerHTML = admins.map(a => `
+                <div class="member-row" data-id="${a.id}">
+                    <span class="user-avatar-small">${escapeHTML((a.name || a.email || "?").charAt(0).toUpperCase())}</span>
+                    <span class="member-info">
+                        <span class="member-name">${escapeHTML(a.name || "Admin")}</span>
+                        <span class="member-email">${escapeHTML(a.email)}</span>
+                    </span>
+                    ${a.is_me ? '<span class="admin-you">You</span>'
+                              : '<button type="button" class="member-remove remove-admin">Remove</button>'}
+                </div>`).join("");
+        }
+
+        async function loadAdmins() {
+            try {
+                admins = await api("/admin/admins");
+                renderAdmins();
+            } catch (err) {
+                adminList.innerHTML = `<div class="empty-box">${escapeHTML(err.message)}</div>`;
+            }
+        }
+
+        document.getElementById("toggleAdminPassword").addEventListener("click", function () {
+            const box = document.getElementById("adminPassword");
+            const show = box.type === "password";
+            box.type = show ? "text" : "password";
+            this.innerHTML = show ? EYE_SHUT : EYE_OPEN;
+            this.title = this.ariaLabel = show ? "Hide password" : "Show password";
+        });
+
+        document.getElementById("addAdminForm").addEventListener("submit", async event => {
+            event.preventDefault();
+            const name = document.getElementById("adminName").value.trim();
+            const email = document.getElementById("adminEmail").value.trim();
+            const password = document.getElementById("adminPassword").value.trim();
+            if (password.length < 6) { alert("The password needs at least 6 characters."); return; }
+            const btn = document.getElementById("addAdminBtn");
+            btn.disabled = true;
+            btn.textContent = "Adding…";
+            try {
+                const admin = await api("/admin/admins", { method: "POST", body: JSON.stringify({ name, email, password }) });
+                admins.push(admin);
+                renderAdmins();
+                event.target.reset();
+                const eye = document.getElementById("toggleAdminPassword");
+                document.getElementById("adminPassword").type = "password";
+                eye.innerHTML = EYE_OPEN;
+                // the bell shows "Admin was added."
+            } catch (err) {
+                alert(err.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = "Add admin";
+            }
+        });
+
+        adminList.addEventListener("click", async event => {
+            const btn = event.target.closest(".remove-admin");
+            if (!btn) return;
+            const id = Number(btn.closest(".member-row").dataset.id);
+            const admin = admins.find(a => a.id === id);
+            if (!confirm(`Remove ${admin.email} as admin?\n\nThey won't be able to log in to the admin portal any more.`)) return;
+            btn.disabled = true;
+            try {
+                await api(`/admin/admins/${id}`, { method: "DELETE" });
+                admins = admins.filter(a => a.id !== id);
+                renderAdmins();
+                // the bell shows "Admin was removed."
+            } catch (err) {
+                alert(err.message);
+                btn.disabled = false;
+            }
+        });
+
+        /* ---------- START ---------- */
+        if (token) {
+            loadDefaultPassword();
+            loadAdmins();
+        }
 
     </script>
+
+<!-- ========================= NOTIFICATION BELL (same block on every page) ========================= -->
+<script>
+(function () {
+    const bell = document.querySelector(".notification");
+    const TOKEN = localStorage.getItem("access_token");
+    if (!bell || !TOKEN) return;
+
+    const BASE = typeof API_BASE !== "undefined" ? API_BASE
+        : location.protocol === "file:" ? "http://127.0.0.1:8001"
+        : location.port === "5500" ? "http://" + location.hostname + ":8001"
+        : location.origin;
+    const esc = v => String(v ?? "").replace(/[&<>"']/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
+    const doLogout = () => {
+        if (typeof logout === "function") return logout();
+        localStorage.removeItem("access_token");
+        location.href = "login.html?role=admin";
+    };
+
+    /* Styles: added once, so the bell looks the same on every page */
+    if (!document.getElementById("nb-styles")) {
+        const st = document.createElement("style");
+        st.id = "nb-styles";
+        st.textContent = `
+            .nb-wrap { position: relative; display: flex; align-items: center; gap: 2px; }
+            .nb-arrow { width: 26px; height: 38px; border: none; border-radius: 8px; background: transparent; color: #553a2c; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; transition: background .15s; }
+            .nb-arrow:hover, .nb-arrow.nb-active { background: #f4ebe5; }
+            .nb-arrow svg { width: 16px; height: 16px; transition: transform .15s; }
+            .nb-arrow.nb-active svg { transform: rotate(180deg); }
+            .notification { position: relative; width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #553a2c; cursor: pointer; transition: background .15s; }
+            .notification:hover, .notification.nb-active { background: #f4ebe5; }
+            .notification svg { width: 24px; height: 24px; }
+            .nb-icon { display: flex; }
+            .nb-badge { position: absolute; top: 2px; right: 0; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: #d9482b; color: #fff; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; border: 2px solid #fff; font-family: Arial, sans-serif; }
+            .nb-badge[hidden] { display: none; }
+            .notification.nb-ring svg { animation: nbRing .6s ease; transform-origin: 50% 4px; }
+            @keyframes nbRing { 0%,100% { transform: rotate(0); } 20% { transform: rotate(14deg); } 40% { transform: rotate(-12deg); } 60% { transform: rotate(8deg); } 80% { transform: rotate(-4deg); } }
+            .nb-panel { display: none; position: absolute; right: 0; top: calc(100% + 12px); width: 360px; background: #fff; border: 1px solid #eee6e0; border-radius: 14px; box-shadow: 0 14px 36px rgba(65,42,28,.16); overflow: hidden; z-index: 200; text-align: left; font-family: Arial, Helvetica, sans-serif; }
+            .nb-panel.open { display: block; animation: nbIn .18s ease; }
+            @keyframes nbIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+            .nb-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid #eee6e0; font-size: 15px; color: #2d211c; }
+            .nb-clear { border: none; background: none; color: #8b4a26; font-size: 13px; font-weight: 700; cursor: pointer; padding: 2px 4px; font-family: inherit; }
+            .nb-clear:hover { text-decoration: underline; }
+            .nb-clear[hidden] { display: none; }
+            .nb-del { position: absolute; top: 8px; right: 8px; width: 26px; height: 26px; border: none; border-radius: 7px; background: transparent; color: #a08c80; font-size: 18px; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+            .nb-del:hover { background: #f1e6df; color: #4d2f20; }
+            .nb-list { list-style: none; margin: 0; padding: 0; max-height: 380px; overflow-y: auto; }
+            .nb-item { position: relative; display: flex; gap: 12px; padding: 12px 42px 12px 16px; border-bottom: 1px solid #f2ebe6; }
+            .nb-item:last-child { border-bottom: none; }
+            .nb-item[data-link]:not([data-link=""]) { cursor: pointer; }
+            .nb-item:hover { background: #fcfaf8; }
+            .nb-item.nb-new { background: #f7eee8; }
+            .nb-dot { width: 8px; height: 8px; margin-top: 6px; border-radius: 50%; flex-shrink: 0; }
+            .nb-item.nb-new .nb-dot { background: #805035; }
+            .nb-title { font-size: 14px; color: #30251f; margin: 0 0 2px; }
+            .nb-item.nb-new .nb-title { font-weight: 600; }
+            .nb-msg { font-size: 13px; color: #66554c; margin: 0 0 3px; }
+            .nb-time { font-size: 12px; color: #8d8179; }
+            .nb-empty { padding: 34px 16px; text-align: center; color: #8d8179; font-size: 14px; }
+            .nb-toast { position: fixed; left: 50%; bottom: 28px; z-index: 10002; max-width: calc(100vw - 32px); padding: 12px 20px; border-radius: 10px; background: #3d281f; color: #fff; font-size: 14px; font-family: Arial, Helvetica, sans-serif; box-shadow: 0 10px 30px rgba(0,0,0,.2); opacity: 0; transform: translate(-50%, 20px); pointer-events: none; transition: .25s ease; }
+            .nb-toast.show { opacity: 1; transform: translate(-50%, 0); }
+            @media (max-width: 700px) {
+                .notification { display: flex !important; }
+                .nb-panel { position: fixed; top: 64px; left: 12px; right: 12px; width: auto; }
+                .nb-toast { bottom: 96px; }
+            }`;
+        document.head.appendChild(st);
+    }
+
+    const ICON_ON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg>`;
+    const ICON_OFF = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/><path d="M4 4l16 16"/></svg>`;
+    const ENABLED_KEY = "notifications_enabled";   // ON/OFF, shared by every page
+    const LAST_SEEN_KEY = "notif_last_seen";
+    const LAST_CHECK_KEY = "notif_last_check";     // last time you were on any portal page
+    const CHECK_EVERY_MS = 15000;                  // ask the server every 15 seconds
+
+    const readEnabled = () => localStorage.getItem(ENABLED_KEY) !== "false";
+    let enabled = readEnabled();
+    let items = [];
+    let justSeen = new Set();
+    let firstLoad = true;
+    let backAt = 0;
+
+    /* Build the bell + dropdown */
+    const wrap = document.createElement("div");
+    wrap.className = "nb-wrap";
+    bell.parentNode.insertBefore(wrap, bell);
+    wrap.appendChild(bell);
+    bell.setAttribute("role", "button");
+    bell.tabIndex = 0;
+    bell.innerHTML = `<span class="nb-icon"></span><span class="nb-badge" hidden></span>`;
+    const icon = bell.querySelector(".nb-icon");
+    const badge = bell.querySelector(".nb-badge");
+
+    /* Small arrow next to the bell: opens the list of stored notifications */
+    const arrow = document.createElement("button");
+    arrow.type = "button";
+    arrow.className = "nb-arrow";
+    arrow.title = "Show notifications";
+    arrow.setAttribute("aria-label", "Show notifications");
+    arrow.setAttribute("aria-expanded", "false");
+    arrow.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>`;
+    wrap.appendChild(arrow);
+
+    const panel = document.createElement("div");
+    panel.className = "nb-panel";
+    panel.innerHTML = `<div class="nb-head"><strong>Notifications</strong><button type="button" class="nb-clear" hidden>Clear all</button></div><ul class="nb-list"></ul>`;
+    wrap.appendChild(panel);
+    const list = panel.querySelector(".nb-list");
+    const clearAllBtn = panel.querySelector(".nb-clear");
+
+    /* Pop-up message at the bottom of the screen */
+    let toastEl = null, toastTimer = null;
+    function toastMsg(msg) {
+        if (!toastEl) {
+            toastEl = document.createElement("div");
+            toastEl.className = "nb-toast";
+            document.body.appendChild(toastEl);
+        }
+        const pageToast = document.getElementById("toast");     // the page's own pop-up
+        if (pageToast) pageToast.classList.remove("show");      // hide it so only one message shows
+        toastEl.textContent = msg;
+        toastEl.classList.add("show");
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => toastEl.classList.remove("show"), 4000);
+    }
+
+    /* Helpers */
+    const toTime = n => {
+        const s = String(n.created_at || "");
+        return new Date(/Z|[+-]\d\d:?\d\d$/.test(s) ? s : s + "Z").getTime();
+    };
+    const lastSeen = () => Number(localStorage.getItem(LAST_SEEN_KEY) || 0);
+    const isUnread = n => typeof n.read === "boolean" ? !n.read : toTime(n) > lastSeen();
+    const isOpen = () => panel.classList.contains("open");
+    const isPresent = () => !document.hidden;      // screen on and this page showing
+
+    function timeAgo(t) {
+        const s = Math.round((Date.now() - t) / 1000);
+        if (s < 60) return "Just now";
+        if (s < 3600) return `${Math.floor(s / 60)} min ago`;
+        if (s < 86400) return `${Math.floor(s / 3600)} hr ago`;
+        if (s < 172800) return "Yesterday";
+        return new Date(t).toLocaleDateString("en-GB", { day: "2-digit", month: "short" });
+    }
+
+    /* Draw */
+    function render() {
+        const unread = items.filter(n => !n.read).length;
+        icon.innerHTML = enabled ? ICON_ON : ICON_OFF;
+        badge.hidden = !enabled || unread === 0;
+        badge.textContent = unread > 9 ? "9+" : unread;
+        bell.title = enabled ? "Notifications ON (click to turn off)" : "Notifications OFF (click to turn on)";
+        bell.setAttribute("aria-label", bell.title);
+
+        clearAllBtn.hidden = !items.length;
+        if (!items.length) {
+            list.innerHTML = `<li class="nb-empty">No notifications yet</li>`;
+            return;
+        }
+        list.innerHTML = items.map(n => {
+            const isNew = !n.read || justSeen.has(n.id);
+            return `
+                <li class="nb-item${isNew ? " nb-new" : ""}" data-id="${n.id}" data-link="${esc(n.link || "")}">
+                    <button type="button" class="nb-del" title="Clear" aria-label="Clear notification">×</button>
+                    <span class="nb-dot"></span>
+                    <div>
+                        <p class="nb-title">${esc(n.message || n.title)}</p>
+                        <span class="nb-time">${timeAgo(toTime(n))}</span>
+                    </div>
+                </li>`;
+        }).join("");
+    }
+
+    /* Mark as read (here and on the server) */
+    function markRead(ids, highlight) {
+        if (!ids.length) return;
+        const set = new Set(ids);
+        items.forEach(n => {
+            if (set.has(n.id) && !n.read) { n.read = true; if (highlight) justSeen.add(n.id); }
+        });
+        fetch(BASE + "/admin/notifications/mark-read", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "Authorization": `Bearer ${TOKEN}` },
+            body: JSON.stringify({ ids })
+        }).catch(() => {});
+    }
+
+    function markAllSeen() {
+        markRead(items.filter(n => !n.read).map(n => n.id), true);
+        if (items.length) localStorage.setItem(LAST_SEEN_KEY, String(Math.max(lastSeen(), ...items.map(toTime))));
+    }
+
+    function ring() {
+        bell.classList.remove("nb-ring");
+        void bell.offsetWidth;
+        bell.classList.add("nb-ring");
+    }
+
+    function popUp(arr) {
+        const n = arr[0];
+        toastMsg(arr.length === 1 ? (n.message || n.title) : `${arr.length} new notifications`);
+    }
+
+    /* Load from the server */
+    async function load(returning) {
+        enabled = readEnabled();       // always use the latest ON/OFF setting
+        try {
+            const res = await fetch(BASE + "/admin/notifications", {
+                headers: { "Authorization": `Bearer ${TOKEN}` }
+            });
+            if (res.status === 401) { doLogout(); return; }
+            if (!res.ok) throw new Error(`status ${res.status}`);
+            const data = await res.json();
+            const incoming = Array.isArray(data) ? data : (data.notifications || []);
+
+            const known = new Set(items.map(n => n.id));
+            const readHere = new Set(items.filter(n => n.read).map(n => n.id));
+            const arrived = incoming.filter(n => !known.has(n.id) && isUnread(n));
+
+            items = incoming
+                .map(n => ({ ...n, read: readHere.has(n.id) || !isUnread(n) }))
+                .sort((a, b) => toTime(b) - toTime(a));
+
+            // Were you on a portal page a moment ago? (e.g. you just moved from the dashboard to a room)
+            const prevCheck = Number(localStorage.getItem(LAST_CHECK_KEY) || 0);
+            const wasOnSite = Date.now() - prevCheck < 60000;
+            if (isPresent()) localStorage.setItem(LAST_CHECK_KEY, String(Date.now()));
+
+            if (isOpen()) {
+                markAllSeen();
+            } else if (firstLoad && wasOnSite && enabled && isPresent()) {
+                // Page just opened but you were already here: pop up what just happened
+                const fresh = items.filter(n => !n.read && toTime(n) > prevCheck - 30000);
+                if (fresh.length) { popUp(fresh); markRead(fresh.map(n => n.id), false); }
+                if (items.some(n => !n.read)) ring();
+            } else {
+                const justCameBack = returning || firstLoad || Date.now() - backAt < 5000;
+                if (enabled && arrived.length && isPresent() && !justCameBack) {
+                    popUp(arrived);                               // you're here: show it now
+                    markRead(arrived.map(n => n.id), false);
+                } else if (enabled && justCameBack && items.some(n => !n.read)) {
+                    ring();                                       // you were away: keep them counted
+                }
+            }
+        } catch (err) {
+            console.warn("Notifications not loaded:", err.message);
+        }
+        firstLoad = false;
+        render();
+    }
+
+    /* Show / hide the list */
+    function setOpen(open) {
+        panel.classList.toggle("open", open);
+        arrow.classList.toggle("nb-active", open);
+        arrow.setAttribute("aria-expanded", String(open));
+        if (open) markAllSeen(); else justSeen.clear();
+        render();
+    }
+
+    /* Click the bell: ON <-> OFF (cross). The list is opened with the arrow. */
+    function toggleBell() {
+        enabled = !readEnabled();
+        localStorage.setItem(ENABLED_KEY, String(enabled));
+        render();
+    }
+
+    bell.addEventListener("click", e => { e.stopPropagation(); toggleBell(); });
+    bell.addEventListener("keydown", e => {
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleBell(); }
+    });
+    arrow.addEventListener("click", e => { e.stopPropagation(); setOpen(!isOpen()); });
+    document.addEventListener("click", e => { if (isOpen() && !wrap.contains(e.target)) setOpen(false); });
+    document.addEventListener("keydown", e => { if (e.key === "Escape" && isOpen()) setOpen(false); });
+    /* Check right away after this page creates / deletes something, instead of waiting for the next 15-second check */
+    const realFetch = window.fetch.bind(window);
+    const finishedJobs = new Set();
+    window.addEventListener("nb-refresh", () => setTimeout(() => load(false), 300));   // a page can ask the bell to check now
+    window.fetch = async (...args) => {
+        const res = await realFetch(...args);
+        try {
+            const req = args[0], opts = args[1] || {};
+            const url = String(req && req.url ? req.url : req);
+            const method = String(opts.method || (req && req.method) || "GET").toUpperCase();
+            if (method !== "GET" && url.includes("/admin/") && !url.includes("/admin/notifications")) {
+                setTimeout(() => load(false), 300);
+            } else if (url.includes("/admin/jobs/") && !url.includes(".csv")) {
+                /* bulk upload finishes in the background: check once when it is done */
+                res.clone().json().then(job => {
+                    if (job && job.status && job.status !== "running" && !finishedJobs.has(job.id)) {
+                        finishedJobs.add(job.id);
+                        setTimeout(() => load(false), 300);
+                    }
+                }).catch(() => {});
+            }
+        } catch (e) { /* never break the page's own request */ }
+        return res;
+    };
+
+    function removeOnServer(path) {
+        fetch(BASE + path, { method: "DELETE", headers: { "Authorization": `Bearer ${TOKEN}` } }).catch(() => {});
+    }
+
+    list.addEventListener("click", e => {
+        e.stopPropagation();                         // keep the list open
+        const item = e.target.closest(".nb-item");
+        if (!item) return;
+        if (e.target.closest(".nb-del")) {           // x = clear this one
+            const id = Number(item.dataset.id);
+            items = items.filter(n => n.id !== id);
+            render();
+            removeOnServer(`/admin/notifications/${id}`);
+            return;
+        }
+        if (item.dataset.link) window.location.href = item.dataset.link;
+    });
+
+    clearAllBtn.addEventListener("click", e => {    // Clear all
+        e.stopPropagation();
+        items = [];
+        render();
+        removeOnServer("/admin/notifications");
+    });
+
+    /* Keep ON/OFF the same everywhere */
+    window.addEventListener("storage", e => {                  // changed in another tab
+        if (e.key === ENABLED_KEY) { enabled = readEnabled(); render(); }
+    });
+    window.addEventListener("pageshow", () => {                // page shown again with the Back button
+        enabled = readEnabled();
+        render();
+    });
+
+    /* Screen comes back on / you return to this tab */
+    function cameBack() {
+        backAt = Date.now();
+        load(true);
+    }
+    document.addEventListener("visibilitychange", () => { if (!document.hidden) cameBack(); });
+
+    /* Leaving a page for another portal page still counts as "here" */
+    window.addEventListener("pagehide", () => {
+        if (!document.hidden) localStorage.setItem(LAST_CHECK_KEY, String(Date.now()));
+    });
+
+    /* Start, then check every 15 seconds (a late check means the laptop was asleep) */
+    render();
+    load(true);
+    let lastTick = Date.now();
+    setInterval(() => {
+        const now = Date.now();
+        const wasAsleep = now - lastTick > CHECK_EVERY_MS * 2;
+        lastTick = now;
+        if (wasAsleep) cameBack();
+        else load(false);
+    }, CHECK_EVERY_MS);
+})();
+</script>
 </body>
 </html>
