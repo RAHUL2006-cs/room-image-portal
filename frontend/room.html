@@ -2278,9 +2278,7 @@
             const chipX = event.target.closest(".user-chip-remove");
             if (chipX) {                                            // × on a chip: take that user out of the room
                 const user = members.find(u => u.id === Number(chipX.dataset.id));
-                if (user && confirm(`Remove ${user.email} from "${room.name}"?\n\nThey won't see this room any more. Their account is kept.`)) {
-                    removeMembers({ user_ids: [user.id] });
-                }
+                if (user) removeMembers({ user_ids: [user.id] });   // no confirmation: easy to add back
                 return;
             }
             if (event.target.closest(".user-chip")) return;         // the chip itself does nothing
@@ -2543,9 +2541,7 @@
             const row = event.target.closest(".member-row");
             if (row && event.target.closest(".member-x")) {        // × on a row: take that user out of the room
                 const user = members.find(u => u.id === Number(row.dataset.id));
-                if (user && confirm(`Remove ${user.email} from "${room.name}"?\n\nThey won't see this room any more. Their account is kept.`)) {
-                    removeMembers({ user_ids: [user.id] });
-                }
+                if (user) removeMembers({ user_ids: [user.id] });   // no confirmation: easy to add back
                 return;
             }
             if (!row || event.target.classList.contains("member-check")) return;
