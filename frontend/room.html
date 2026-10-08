@@ -3161,9 +3161,14 @@
             }
         });
 
-        gallery.addEventListener("click", async event => {
-            const item = itemFromEvent(event);
-            if (!item) return;
+gallery.addEventListener("click", async event => {
+    // Don't let gallery click handling interfere with typing in description
+    if (event.target.closest(".image-description")) {
+        return;
+    }
+
+    const item = itemFromEvent(event);
+    if (!item) return;
 
             if (event.target.closest(".desc-save")) {
                 const btn = event.target.closest(".desc-save");
