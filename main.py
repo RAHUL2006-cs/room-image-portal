@@ -2093,6 +2093,7 @@ def set_default_password(
         row.value = password
     else:
         db.add(Setting(key="default_password", value=password))
+    notify(db, "Default Password Changed", "Default password was changed.", "settings.html")
     db.commit()
     return {"default_password": password}
 
