@@ -2841,6 +2841,7 @@
                         item.savedDescription = sentDescription;
                         room.images.push(data);
                         setStatus(item, "done");
+                        uploadedRun[item.subjectId] = (uploadedRun[item.subjectId] || 0) + 1;   // counted for the bell
                         // Swap in the saved card (with its checkbox), keeping what is being typed
                         const card = cardFor(item);
                         if (!card && item.subjectId === currentSubjectId) {
@@ -2887,11 +2888,20 @@
             }
         }
 
+        /* Images that reached "Done" in this run, per subject (the bell is told once the run finishes) */
+        const uploadedRun = {};
+
         function finishedAll() {
             const done = allItems.filter(item => item.status === "done").length;
             const failed = allItems.filter(item => item.status === "failed").length;
-            // the upload pop-up shows the result (and the bell says "Images were uploaded.")
-            window.dispatchEvent(new Event("nb-refresh"));                   // tell the bell to check now
+            // the upload pop-up shows the result; the bell says "N images uploaded to ..."
+            const sends = Object.keys(uploadedRun).map(subjectId => {
+                const count = uploadedRun[subjectId];
+                delete uploadedRun[subjectId];
+                return api(`/admin/subjects/${subjectId}/images/uploaded`, { method: "POST", body: JSON.stringify({ count }) })
+                    .catch(err => console.error(err));
+            });
+            Promise.all(sends).then(() => window.dispatchEvent(new Event("nb-refresh")));   // tell the bell to check now
         }
 
         function enqueue(items) {
