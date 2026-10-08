@@ -1665,6 +1665,24 @@
         /* Back button lives in the top bar */
         .topbar .back-link { margin: 0 auto 0 0 !important; font-size: 16px !important; min-height: 0 !important; }
         .topbar.has-back::before { display: none !important; }
+        .members-toggle {
+            flex-shrink: 0;
+            width: 40px;
+            height: 40px;
+            border: 1px solid #dccfc6;
+            border-radius: 50%;
+            background: #fff;
+            color: #5b3a28;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: 0.2s ease;
+        }
+        .members-toggle:hover { background: #f8f2ee; }
+        .members-toggle svg { width: 20px; height: 20px; transition: transform 0.2s ease; }
+        .members-toggle.open svg { transform: rotate(180deg); }
+        @media (max-width: 700px) { .members-toggle { width: 44px; height: 44px; } }
     </style>
 </head>
 
@@ -1749,9 +1767,6 @@
             <div class="profile">
                 <div class="profile-avatar" id="profileAvatar">A</div>
                 <span class="profile-name" id="profileName">Admin</span>
-                <svg class="profile-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="m6 9 6 6 6-6"/>
-                </svg>
             </div>
         </header>
 
@@ -1787,6 +1802,9 @@
                             <h2>Members <span class="tab-count" id="memberCount">0</span></h2>
                             <p>Only these users can see this room.</p>
                         </div>
+                        <button type="button" class="members-toggle" id="membersToggle" hidden aria-expanded="false" title="Show members" aria-label="Show members">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                        </button>
                     </div>
                     <div class="member-tools">
                         <div class="member-add" id="memberAdd">
@@ -2181,6 +2199,21 @@
         const PAGE = 100;               // members drawn at a time (rooms can have thousands)
         let membersShown = PAGE;
 
+        /* Show / hide the member list with the arrow button in the Members bar */
+        const membersToggle = document.getElementById("membersToggle");
+        let membersOpen = false;
+        function setMembersOpen(open) {
+            membersOpen = open;
+            membersToggle.classList.toggle("open", open);
+            membersToggle.setAttribute("aria-expanded", String(open));
+            membersToggle.title = membersToggle.ariaLabel = open ? "Hide members" : "Show members";
+        }
+        membersToggle.addEventListener("click", () => {
+            setMembersOpen(!membersOpen);
+            if (!membersOpen) selectedMembers.clear();             // closing the list also clears the selection
+            renderMembers();
+        });
+
         function renderMembers() {
             const list = members;
 
@@ -2197,7 +2230,10 @@
                         </span>
                     </div>`).join("");
             }
-            showMoreMembers.hidden = list.length <= membersShown;
+            membersToggle.hidden = !members.length;                 // the button shows once the room has members
+            if (!members.length) setMembersOpen(false);
+            memberList.hidden = !membersOpen;                       // members show only after clicking the button
+            showMoreMembers.hidden = !membersOpen || list.length <= membersShown;
             showMoreMembers.textContent = `Show more (${(list.length - membersShown).toLocaleString("en-IN")} left)`;
             document.getElementById("memberCount").textContent = members.length.toLocaleString("en-IN");
             updateMemberBar();

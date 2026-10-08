@@ -1730,9 +1730,6 @@
             <div class="profile">
                 <div class="profile-avatar" id="profileAvatar">A</div>
                 <span class="profile-name" id="profileName">Admin</span>
-                <svg class="profile-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="m6 9 6 6 6-6"/>
-                </svg>
             </div>
         </header>
 
@@ -1762,7 +1759,7 @@
             <div class="panel" style="margin-top:18px" id="admins">
                 <div class="panel-head">
                     <div>
-                        <h2>Admins <span class="tab-count" id="adminTotal">0</span></h2>
+                        <h2>Add an admin</h2>
                         <p>Only admins can add admins.</p>
                     </div>
                 </div>
@@ -1784,6 +1781,15 @@
                     </div>
                     <button type="submit" class="room-create-btn" id="addAdminBtn">Add admin</button>
                 </form>
+            </div>
+
+            <!-- ALL ADMINS -->
+            <div class="panel" style="margin-top:18px">
+                <div class="panel-head">
+                    <div>
+                        <h2>All admins <span class="tab-count" id="adminTotal">0</span></h2>
+                    </div>
+                </div>
                 <div class="member-list admin-list" id="adminList"></div>
             </div>
         </section>
