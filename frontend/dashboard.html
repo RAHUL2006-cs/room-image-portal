@@ -901,6 +901,12 @@
         .topbar.has-back::before { display: none !important; }
 
         /* Notification bell styles are added by the bell script at the bottom of this page */
+        /* Whole page shown at 90% on laptops / desktops (phones and tablets stay normal) */
+        @media (min-width: 851px) {
+            html { zoom: 0.9; }
+            .sidebar, .main { height: calc(100vh / 0.9); min-height: calc(100vh / 0.9); }      /* the zoom shrinks 100vh too, so make it back to full height */
+            body { min-height: calc(100vh / 0.9); }
+        }
     </style>
 </head>
 
