@@ -3592,7 +3592,7 @@
             if (!drag || pinch) return;
             const dx = event.clientX - drag.x;
             const dy = event.clientY - drag.y;
-            if (Math.abs(dx) > 3 || Math.abs(dy) > 3) drag.moved = true;
+            if (Math.abs(dx) > 8 || Math.abs(dy) > 8) drag.moved = true;      // small finger wobble is still a tap
             panX = drag.panX + dx;
             panY = drag.panY + dy;
             applyZoom();
@@ -3613,8 +3613,8 @@
             if (event.target.closest(".viewer-nav")) return;
             if (justDragged) { justDragged = false; lastTap.time = 0; return; }
             const now = Date.now();
-            const near = Math.hypot(event.clientX - lastTap.x, event.clientY - lastTap.y) < 30;
-            if (now - lastTap.time < 300 && near) {
+            const near = Math.hypot(event.clientX - lastTap.x, event.clientY - lastTap.y) < 50;   // fingers land a bit apart
+            if (now - lastTap.time < 400 && near) {
                 if (zoom === MIN_ZOOM) zoomTo(2.5, event.clientX, event.clientY);
                 else resetZoom();
                 lastTap.time = 0;
