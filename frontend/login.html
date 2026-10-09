@@ -1,9 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" translate="no">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="google" content="notranslate">   <!-- no "Translate page?" pop-up -->
 
     <title>Admin Login</title>
 
@@ -1044,19 +1045,6 @@
                 </button>
 
 
-                <!-- SIGN UP -->
-
-                <div class="signup">
-
-                    Don't have an account?
-
-                   <a href="signup.html" id="signupLink">
-
-                        Sign up
-                    </a>
-
-                </div>
-
             </form>
 
         </section>
@@ -1102,10 +1090,6 @@
     document.title = settings.portal + " Login";
     document.getElementById("portalName").textContent = settings.portal;
     document.getElementById("loginSubtitle").textContent = settings.subtitle;
-    document.getElementById("signupLink").href = "signup.html?role=" + role;
-    if (role === "user") {
-        document.querySelector(".signup").style.display = "none";
-    }
 
     const loginForm = document.getElementById("loginForm");
     const loginButton = loginForm.querySelector(".login-btn");
