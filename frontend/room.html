@@ -3613,8 +3613,7 @@
             if (event.target.closest(".viewer-nav")) return;
             if (justDragged) { justDragged = false; lastTap.time = 0; return; }
             const now = Date.now();
-            const near = Math.hypot(event.clientX - lastTap.x, event.clientY - lastTap.y) < 50;   // fingers land a bit apart
-            if (now - lastTap.time < 400 && near) {
+            if (now - lastTap.time < 400) {          // two taps anywhere on the picture area count
                 if (zoom === MIN_ZOOM) zoomTo(2.5, event.clientX, event.clientY);
                 else resetZoom();
                 lastTap.time = 0;
