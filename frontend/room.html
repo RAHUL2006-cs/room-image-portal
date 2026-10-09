@@ -3607,12 +3607,20 @@
         viewerStage.addEventListener("pointerup", endDrag);
         viewerStage.addEventListener("pointercancel", endDrag);
 
-        /* Click to zoom in, click again to zoom back out */
+        /* Double-tap / double-click to zoom in, again to zoom back out (a single tap does nothing) */
+        let lastTap = { time: 0, x: 0, y: 0 };
         viewerStage.addEventListener("click", function (event) {
             if (event.target.closest(".viewer-nav")) return;
-            if (justDragged) { justDragged = false; return; }
-            if (zoom === MIN_ZOOM) zoomTo(2.5, event.clientX, event.clientY);
-            else resetZoom();
+            if (justDragged) { justDragged = false; lastTap.time = 0; return; }
+            const now = Date.now();
+            const near = Math.hypot(event.clientX - lastTap.x, event.clientY - lastTap.y) < 30;
+            if (now - lastTap.time < 300 && near) {
+                if (zoom === MIN_ZOOM) zoomTo(2.5, event.clientX, event.clientY);
+                else resetZoom();
+                lastTap.time = 0;
+            } else {
+                lastTap = { time: now, x: event.clientX, y: event.clientY };
+            }
         });
 
         /* Keyboard: Esc, + / -, 0, arrows (runs before the room popup's Esc) */
