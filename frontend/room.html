@@ -3593,6 +3593,7 @@
             const dx = event.clientX - drag.x;
             const dy = event.clientY - drag.y;
             if (Math.abs(dx) > 8 || Math.abs(dy) > 8) drag.moved = true;      // small finger wobble is still a tap
+            if (!drag.moved) return;                                           // a tap never moves the picture
             panX = drag.panX + dx;
             panY = drag.panY + dy;
             applyZoom();
