@@ -3610,11 +3610,11 @@
 
         /* Double-tap / double-click to zoom in, again to zoom back out (a single tap does nothing) */
         let lastTap = { time: 0, x: 0, y: 0 };
-        viewerStage.addEventListener("click", function (event) {
+        viewerStage.addEventListener("pointerup", function (event) {     // pointerup: phones don't always send "click" for fast taps
             if (event.target.closest(".viewer-nav")) return;
             if (justDragged) { justDragged = false; lastTap.time = 0; return; }
             const now = Date.now();
-            if (now - lastTap.time < 400) {          // two taps anywhere on the picture area count
+            if (now - lastTap.time < 500) {          // two taps anywhere on the picture area count
                 if (zoom === MIN_ZOOM) zoomTo(2.5);      // zoom straight from the centre; the tap spot doesn't move the picture
                 else resetZoom();
                 lastTap.time = 0;
