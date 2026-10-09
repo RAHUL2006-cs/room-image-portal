@@ -314,6 +314,7 @@
         }
         tbody tr:last-child td { border-bottom: none; }
         tbody tr:hover { background: #fcfaf8; }
+        tbody tr[data-id] { cursor: pointer; }      /* the whole room row opens the room */
         .room-name { display: flex; align-items: center; gap: 15px; }
         .room-icon {
             width: 42px;
@@ -1384,7 +1385,12 @@
         /* ---------- TABLE ACTIONS ---------- */
         roomsBody.addEventListener("click", async function (event) {
             const button = event.target.closest(".action-btn");
-            if (!button) return;
+            if (!button) {
+                // Click anywhere else on a room row: open the room
+                const roomRow = event.target.closest("tr[data-id]");
+                if (roomRow && !event.target.closest("a")) window.location.href = `room.html?id=${roomRow.dataset.id}`;
+                return;
+            }
 
             const row = button.closest("tr");
             const roomId = row.dataset.id;
