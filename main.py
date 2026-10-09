@@ -87,7 +87,7 @@ SECRET_KEY = os.getenv("SECRET_KEY", "room-based-image-secret-key-change-later")
 
 ALGORITHM = "HS256"
 
-ACCESS_TOKEN_EXPIRE_MINUTES = 60
+ACCESS_TOKEN_EXPIRE_MINUTES = 120
 
 
 # =========================================================
