@@ -2941,6 +2941,7 @@
                 const sentDescription = item.description.trim();
 
                 const xhr = new XMLHttpRequest();
+                item.xhr = xhr;                          // kept so Cancel can stop it
                 xhr.open("POST", `${API_BASE}/admin/subjects/${item.subjectId}/images`);
                 xhr.setRequestHeader("Authorization", `Bearer ${token}`);
 
@@ -2954,6 +2955,7 @@
                 // File sent: the server now compresses and saves it. Small files send almost instantly,
                 // so "Uploading…" stays on screen for at least 0.8 s before it switches.
                 xhr.upload.onload = () => {
+                    item.sent = true;                    // the server has the whole file now
                     const wait = Math.max(0, 800 - (Date.now() - startedAt));
                     setTimeout(() => {
                         if (item.status === "uploading") setStatus(item, "compressing", { compressAt: Date.now() });
@@ -2963,6 +2965,14 @@
                 xhr.onload = () => {
                     let data = null;
                     try { data = JSON.parse(xhr.responseText); } catch (e) { /* not JSON */ }
+                    if (item.cancelled) {
+                        // Cancelled after the file reached the server: remove the saved copy
+                        if (xhr.status >= 200 && xhr.status < 300 && data && data.id) {
+                            api("/admin/images", { method: "DELETE", body: JSON.stringify({ ids: [data.id] }) }).catch(err => console.error(err));
+                        }
+                        resolve();
+                        return;
+                    }
                     if (xhr.status === 401 && !sessionExpired) {
                         sessionExpired = true;
                         alert("Your session has expired. Please log in again.");
@@ -3002,7 +3012,9 @@
                     }
                     resolve();
                 };
+                xhr.onabort = () => resolve();
                 xhr.onerror = () => {
+                    if (item.cancelled) { resolve(); return; }
                     setStatus(item, "failed", { error: `Can't reach the server at ${API_BASE}` });
                     resolve();
                 };
@@ -3287,7 +3299,7 @@
                 uploadIcon.innerHTML = state === "busy" ? '<span class="up-spinner big"></span>' : state === "done" ? "✓" : "!";
                 uploadPercent.hidden = state !== "busy";
                 uploadActions.innerHTML = state === "busy"
-                    ? '<button type="button" class="up-hide">Hide</button>'
+                    ? '<button type="button" class="up-cancel">Cancel</button>'
                     : state === "failed"
                         ? '<button type="button" class="up-retry">Retry</button><button type="button" class="up-close">Close</button>'
                         : "";
@@ -3312,9 +3324,17 @@
         uploadActions.addEventListener("click", event => {
             if (event.target.closest(".up-retry")) {
                 enqueue(currentItems().filter(item => item.status === "failed"));
-            } else if (event.target.closest(".up-hide")) {
-                popupClosed = true;               // keep working; uploads carry on in the background
-                uploadPopup.hidden = true;
+            } else if (event.target.closest(".up-cancel")) {
+                // Stop the images that haven't finished; ones already done stay saved
+                const stopping = currentItems().filter(item => ["waiting", "uploading", "compressing"].includes(item.status));
+                stopping.forEach(item => {
+                    item.cancelled = true;
+                    if (item.xhr && !item.sent) item.xhr.abort();     // still sending: stop it
+                    URL.revokeObjectURL(item.url);
+                });
+                queue = queue.filter(item => !item.cancelled);
+                allItems = allItems.filter(item => !item.cancelled);
+                updateSummary();
             } else if (event.target.closest(".up-close")) {
                 // Forget the failed files and close
                 currentItems().filter(item => item.status === "failed").forEach(item => URL.revokeObjectURL(item.url));
