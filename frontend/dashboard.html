@@ -1422,7 +1422,7 @@
                 loadRooms();
                 return;
             }
-            logout();
+            if (confirm("Do you want to logout?")) logout();   // Back logs out only after asking, like the user portal
         });
 
         /* ---------- START ---------- */
@@ -1642,7 +1642,10 @@
             const res = await fetch(BASE + "/admin/notifications", {
                 headers: { "Authorization": `Bearer ${TOKEN}` }
             });
-            if (res.status === 401) { doLogout(); return; }
+            if (res.status === 401) {                // login expired: warn the admin first, like the user portal
+                if (!window.sessionWarned) { window.sessionWarned = true; alert("Your session has expired. Please log in again."); }
+                doLogout(); return;
+            }
             if (!res.ok) throw new Error(`status ${res.status}`);
             const data = await res.json();
             const incoming = Array.isArray(data) ? data : (data.notifications || []);
