@@ -3615,7 +3615,7 @@
             if (justDragged) { justDragged = false; lastTap.time = 0; return; }
             const now = Date.now();
             if (now - lastTap.time < 400) {          // two taps anywhere on the picture area count
-                if (zoom === MIN_ZOOM) zoomTo(2.5, event.clientX, event.clientY);
+                if (zoom === MIN_ZOOM) zoomTo(2.5);      // zoom straight from the centre; the tap spot doesn't move the picture
                 else resetZoom();
                 lastTap.time = 0;
             } else {
